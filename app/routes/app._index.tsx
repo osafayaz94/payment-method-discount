@@ -76,8 +76,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
   const form = await request.formData();
 
-  if (form.get("intent") === "retry") {
-    const orderId = String(form.get("orderId"));
+  const intent = form.get("intent");
+  if (intent === "retry" || intent === "apply") {
+    let orderId = String(form.get("orderId") ?? "");
+    if (intent === "apply") {
+      // Merchants type the order number they see in the admin, such as #1001.
+      const name = String(form.get("orderName") ?? "").trim().replace(/^#?/, "#");
+      if (name === "#") return { ok: false, message: "Enter an order number, such as #1001" };
+      const data = await toGraphQL(admin)(
+        `#graphql
+        query OrderByName($query: String!) {
+          orders(first: 1, query: $query) {
+            nodes { id name }
+          }
+        }`,
+        { query: `name:${name}` },
+      );
+      const match = data.orders.nodes.find((o: { name: string }) => o.name === name);
+      if (!match) return { ok: false, message: `No order ${name} found` };
+      orderId = match.id;
+    }
     try {
       const result = await applyDiscount(
         toGraphQL(admin),
@@ -85,7 +103,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         await getSettings(session.shop),
       );
       return result.applied
-        ? { ok: true, message: "Discount applied" }
+        ? {
+            ok: true,
+            message: `Discount applied, new total ${result.total.amount} ${result.total.currencyCode}`,
+          }
         : { ok: false, message: `Not applied: ${result.reason}` };
     } catch (err) {
       return { ok: false, message: (err as Error).message };
@@ -185,6 +206,8 @@ export default function Index() {
           </s-stack>
         </s-section>
       </Form>
+
+      <ApplyToOrder />
 
       {failed.length > 0 && (
         <s-section heading="Needs attention">
@@ -311,6 +334,44 @@ function OrderTable({ orders, retry = false }: { orders: OrderRow[]; retry?: boo
         ))}
       </s-table-body>
     </s-table>
+  );
+}
+
+// For orders placed while the app was offline, or to check why an order was
+// skipped: the message says what happened.
+function ApplyToOrder() {
+  const fetcher = useFetcher<typeof action>();
+  const shopify = useAppBridge();
+  const busy = fetcher.state !== "idle";
+
+  useEffect(() => {
+    if (fetcher.data && "message" in fetcher.data && fetcher.data.message) {
+      shopify.toast.show(fetcher.data.message, { isError: !fetcher.data.ok });
+    }
+  }, [fetcher.data, shopify]);
+
+  return (
+    <s-section heading="Apply to an order">
+      <fetcher.Form method="post">
+        <input type="hidden" name="intent" value="apply" />
+        <s-stack direction="block" gap="base">
+          <s-text-field
+            name="orderName"
+            label="Order number"
+            placeholder="#1001"
+            details="Applies the discount to an order that was missed, or tells you why it doesn't qualify."
+          />
+          <s-stack direction="inline" gap="base">
+            <s-button type="submit" {...(busy ? { loading: true } : {})}>
+              Apply discount
+            </s-button>
+          </s-stack>
+          {fetcher.data && "message" in fetcher.data && fetcher.data.message && (
+            <s-text tone={fetcher.data.ok ? "success" : "critical"}>{fetcher.data.message}</s-text>
+          )}
+        </s-stack>
+      </fetcher.Form>
+    </s-section>
   );
 }
 

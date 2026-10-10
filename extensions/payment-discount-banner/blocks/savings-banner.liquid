@@ -14,7 +14,8 @@
   {%- endif -%}
 
   {%- if base > 0 -%}
-    {%- assign saving = base | times: discount.percent | divided_by: 100.0 | round -%}
+    {%- comment -%} Rounded down to the cent, as Shopify does for the order discount. {%- endcomment -%}
+    {%- assign saving = base | times: discount.percent | divided_by: 100.0 | floor -%}
     {%- assign method = discount.gateways | first | default: 'Bank Deposit' -%}
     {%- assign percent = discount.percent | append: '%' -%}
     {%- assign amount = saving | money -%}

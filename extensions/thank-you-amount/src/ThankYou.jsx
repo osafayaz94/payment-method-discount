@@ -20,10 +20,11 @@ function Extension() {
   const selected = shopify.selectedPaymentOptions?.value ?? [];
   if (!selected.some((option) => option.type === 'manualPayment')) return null;
 
-  // Like the app, discount each line separately so the rounding matches.
+  // Like the app's order edit, discount each line separately and round each
+  // line's discount down to the cent, as Shopify does, so the amounts match.
   const discount = shopify.lines.value.reduce((sum, line) => {
     const lineTotal = Number(line.cost.totalAmount.amount);
-    return sum + Math.round(lineTotal * settings.percent) / 100;
+    return sum + Math.floor(lineTotal * settings.percent + 1e-6) / 100;
   }, 0);
   if (!(discount > 0)) return null;
 
