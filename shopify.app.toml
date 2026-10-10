@@ -1,9 +1,17 @@
-# This file stores configurations for your Shopify app.
-client_id = ""
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "e51d1ea6a855ffacddfdaa9c8550e3e4"
+name = "Payment Method Discount"
+# Set to the deployed app's address (for example the Railway domain) before `shopify app deploy`.
+application_url = "https://shopify.dev/apps/default-app-home"
+embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_orders,write_orders,write_order_edits"
+
+[auth]
+redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
 
 [webhooks]
 api_version = "2026-10"
@@ -11,17 +19,17 @@ api_version = "2026-10"
   # Handled by: /app/routes/webhooks.app.uninstalled.tsx
   [[webhooks.subscriptions]]
   uri = "/webhooks/app/uninstalled"
-  topics = ["app/uninstalled"]
+  topics = [ "app/uninstalled" ]
 
   # Handled by: /app/routes/webhooks.app.scopes_update.tsx
   [[webhooks.subscriptions]]
-  topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
+  topics = [ "app/scopes_update" ]
 
   # Handled by: /app/routes/webhooks.orders.create.tsx
   [[webhooks.subscriptions]]
-  topics = [ "orders/create" ]
   uri = "/webhooks/orders/create"
+  topics = [ "orders/create" ]
   # The app re-reads the order itself, so it only needs the ID.
   include_fields = [ "admin_graphql_api_id" ]
 
@@ -30,3 +38,7 @@ api_version = "2026-10"
   [[webhooks.subscriptions]]
   uri = "/webhooks/compliance"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
