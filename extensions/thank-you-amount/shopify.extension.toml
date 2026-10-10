@@ -3,6 +3,7 @@ api_version = "2026-07"
 [[extensions]]
 name = "Payment discount amount"
 handle = "thank-you-amount"
+uid = "40e4c6ca-0e06-d52c-68f4-7b9b816ca278dd457906"
 type = "ui_extension"
 
 # Thank-you page blocks are available on every plan (the checkout steps
