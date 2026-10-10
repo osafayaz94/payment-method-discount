@@ -1,6 +1,5 @@
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
-import {useAppMetafields} from '@shopify/ui-extensions/checkout/preact';
 
 // Shows the customer the discount and the amount to transfer right after they
 // order. The app applies the discount to the order a few seconds later
@@ -10,9 +9,19 @@ export default function extension() {
 }
 
 function Extension() {
-  const [entry] = useAppMetafields({namespace: '$app:payment_discount', key: 'settings'});
-  const settings = parseSettings(entry?.metafield?.value);
-  if (!settings?.enabled || !(settings.percent > 0)) return null;
+  const settings = readSettings();
+  // The checkout editor previews a card payment, so show a sample there to
+  // let the merchant see where the block sits, and whether settings load.
+  const inEditor = Boolean(shopify.extension.editor);
+
+  if (!settings) {
+    return inEditor ? (
+      <s-banner tone="warning" heading="Payment discount amount">
+        <s-text>Settings not found. Open the Payment Method Discount app and click Save.</s-text>
+      </s-banner>
+    ) : null;
+  }
+  if (!settings.enabled || !(settings.percent > 0)) return null;
 
   // Checkout only says what type of method was used, not its name. Bank
   // Deposit and other manual methods are 'manualPayment' ('other' is allowed
@@ -20,9 +29,6 @@ function Extension() {
   // is 'paymentOnDelivery', so COD orders never show this.
   const selected = shopify.selectedPaymentOptions?.value ?? [];
   const paidManually = selected.some((option) => ['manualPayment', 'other'].includes(option.type));
-  // The checkout editor previews a card payment, so show a sample there to
-  // let the merchant see where the block sits.
-  const inEditor = Boolean(shopify.extension.editor);
   if (!paidManually && !inEditor) return null;
 
   // Like the app's order edit, discount each line separately and round each
@@ -55,7 +61,18 @@ function Extension() {
   );
 }
 
-function parseSettings(value) {
+// The app writes its settings to an app-owned shop metafield
+// ($app:payment_discount / settings, see app/settings.server.ts). Match the
+// namespace on its ending in case it is reported in its full
+// "app--<id>--payment_discount" form rather than the "$app:" one.
+function readSettings() {
+  const entries = shopify.appMetafields?.value ?? [];
+  const entry = entries.find(
+    ({metafield}) =>
+      metafield?.key === 'settings' &&
+      String(metafield?.namespace ?? '').endsWith('payment_discount'),
+  );
+  const value = entry?.metafield?.value;
   if (!value) return null;
   if (typeof value !== 'string') return value;
   try {
