@@ -1,0 +1,69 @@
+{%- comment -%}
+  Tells shoppers how much they save by paying with the discounted payment method.
+  Shopify only lets non-Plus stores add text to checkout as the payment method's
+  description, so this banner sits on the cart and product pages instead.
+  Settings come from the app (app/settings.server.ts publishes them).
+{%- endcomment -%}
+{%- assign discount = app.metafields.payment_discount.settings.value -%}
+
+{%- if discount and discount.enabled and discount.percent > 0 -%}
+  {%- if template.name == 'product' and product -%}
+    {%- assign base = product.selected_or_first_available_variant.price -%}
+  {%- else -%}
+    {%- assign base = cart.items_subtotal_price -%}
+  {%- endif -%}
+
+  {%- if base > 0 -%}
+    {%- assign saving = base | times: discount.percent | divided_by: 100.0 | round -%}
+    {%- assign method = discount.gateways | first | default: 'Bank Deposit' -%}
+    {%- assign percent = discount.percent | append: '%' -%}
+    {%- assign amount = saving | money -%}
+    {%- assign message = block.settings.text
+      | replace: '[method]', method
+      | replace: '[percent]', percent
+      | replace: '[amount]', amount
+    -%}
+    <div
+      class="payment-discount-banner"
+      style="background: {{ block.settings.background }}; color: {{ block.settings.text_color }}; padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; line-height: 1.4;"
+      {{ block.shopify_attributes }}
+    >
+      {{ message }}
+    </div>
+  {%- endif -%}
+{%- elsif request.design_mode -%}
+  <div style="padding: 12px 16px; border: 1px dashed #999; border-radius: 8px; margin: 12px 0;" {{ block.shopify_attributes }}>
+    Payment discount banner: open the Payment Method Discount app, turn the discount on and click Save.
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Payment discount banner",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["cart", "product"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "text",
+      "label": "Message",
+      "default": "Pay by [method] at checkout and save [percent] ([amount] off).",
+      "info": "[method], [percent] and [amount] are filled in from the app's settings and the cart or product price."
+    },
+    {
+      "type": "color",
+      "id": "background",
+      "label": "Background",
+      "default": "#E8F5E9"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#1B5E20"
+    }
+  ]
+}
+{% endschema %}

@@ -30,6 +30,46 @@ export async function saveSettings(shop: string, settings: DiscountSettings) {
   });
 }
 
+// The storefront banner (theme app extension) and the Thank-you page block
+// (checkout UI extension) can't reach the database, so the settings they need
+// are copied into metafields: the theme reads the app installation's, checkout
+// reads the shop's app-owned one.
+export const SETTINGS_NAMESPACE = "payment_discount";
+
+export async function publishSettings(
+  graphql: GraphQL,
+  settings: DiscountSettings,
+) {
+  const { shop, currentAppInstallation } = await graphql(`#graphql
+    query DiscountOwners {
+      shop { id }
+      currentAppInstallation { id }
+    }`);
+  const value = JSON.stringify({
+    enabled: settings.enabled,
+    percent: settings.percent,
+    gateways: settings.gateways,
+    label: settings.label,
+  });
+  const { metafieldsSet } = await graphql(
+    `#graphql
+    mutation PublishSettings($metafields: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $metafields) {
+        userErrors { field message }
+      }
+    }`,
+    {
+      metafields: [
+        { ownerId: currentAppInstallation.id, namespace: SETTINGS_NAMESPACE, key: "settings", type: "json", value },
+        { ownerId: shop.id, namespace: `$app:${SETTINGS_NAMESPACE}`, key: "settings", type: "json", value },
+      ],
+    },
+  );
+  if (metafieldsSet.userErrors.length) {
+    throw new Error(metafieldsSet.userErrors.map((e: { message: string }) => e.message).join("; "));
+  }
+}
+
 // Turns the template's admin client into the plain `graphql(query, variables)`
 // function the discount logic expects.
 export function toGraphQL(admin: {

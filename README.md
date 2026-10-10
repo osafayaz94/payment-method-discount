@@ -33,12 +33,21 @@ Applying the discount right after the order is placed works on every plan. It al
 
 The app's page has a ready-made sentence that merchants can paste into their payment method's **Additional details**, so customers see the offer at checkout.
 
+### Showing customers what they save (every plan)
+
+Shopify only lets Plus stores add banners to the checkout steps. On every plan, the app shows the saving just before and just after checkout:
+- **Cart and product page banner** (theme app extension): for example "Pay by Bank Deposit at checkout and save 5% ($1.25 off)", worked out from the cart subtotal or the product price. Merchants add it from the app's page, which opens the theme editor with the block added. The wording and colours are editable in the theme editor.
+- **Thank-you page block** (checkout UI extension): shown after ordering with a manual payment method such as Bank Deposit. It gives the discount and the amount to pay. Merchants add it in **Settings → Checkout → Customize → Thank you page**. Checkout only reports the payment method's type, so it shows for any manual payment method, never for cash on delivery.
+
+Both read the app's settings from metafields that the app writes on install and whenever the settings are saved.
+
 ## The app's page
 
 Merchants open the app from **Apps** in the Shopify admin. The page has:
 - **Discount**: on/off switch, percentage, payment methods (with the names seen on recent orders, for exact spelling), label, and whether to email the customer
 - **Needs attention**: orders whose discount failed, each with a Retry button
 - **Recently discounted orders**
+- **Show customers what they save**: buttons that add the storefront banner and open the checkout editor for the Thank-you page block
 - **Tell customers at checkout**: suggested wording for the payment method's description
 
 ## Project layout
@@ -46,10 +55,12 @@ Merchants open the app from **Apps** in the Shopify admin. The page has:
 | Path | What it is |
 |---|---|
 | `app/discount.ts` | Core logic: who qualifies, and the order edit. It has no framework imports, so it is easy to test. |
-| `app/settings.server.ts` | Saves and loads each shop's settings (Prisma) |
+| `app/settings.server.ts` | Saves and loads each shop's settings (Prisma), and publishes them to metafields for the extensions |
 | `app/routes/app._index.tsx` | Settings page shown in the Shopify admin |
 | `app/routes/webhooks.orders.create.tsx` | Runs the discount on new orders |
 | `app/routes/webhooks.compliance.tsx` | Required privacy webhooks |
+| `extensions/payment-discount-banner/` | Cart and product page banner (theme app extension) |
+| `extensions/thank-you-amount/` | Thank-you page block (checkout UI extension) |
 | `prisma/schema.prisma` | `Session` (from the template) and `Settings` tables |
 | `shopify.app.toml` | Scopes and webhook subscriptions |
 | `test/discount.test.ts` | Tests against a fake Admin API |

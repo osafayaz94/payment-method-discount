@@ -14,7 +14,7 @@ import {
   applyDiscount,
   parseGateways,
 } from "../discount";
-import { getSettings, saveSettings, toGraphQL } from "../settings.server";
+import { getSettings, publishSettings, saveSettings, toGraphQL } from "../settings.server";
 
 type OrderRow = {
   id: string;
@@ -63,6 +63,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   ].sort();
 
   return {
+    // Used to build theme editor links that add the storefront banner.
+    apiKey: process.env.SHOPIFY_API_KEY || "",
     settings,
     seenGateways,
     applied: data.applied.nodes as OrderRow[],
@@ -99,25 +101,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!label) errors.label = "Enter a label";
   if (Object.keys(errors).length) return { ok: false, errors };
 
-  await saveSettings(session.shop, {
+  const settings = {
     enabled: form.get("enabled") !== null,
     percent,
     gateways,
     label,
     notifyCustomer: form.get("notifyCustomer") !== null,
-  });
+  };
+  await saveSettings(session.shop, settings);
+  try {
+    await publishSettings(toGraphQL(admin), settings);
+  } catch (err) {
+    return {
+      ok: false,
+      message: `Settings saved, but the store banners were not updated: ${(err as Error).message}`,
+    };
+  }
   return { ok: true, message: "Settings saved" };
 };
 
 export default function Index() {
-  const { settings, seenGateways, applied, failed } = useLoaderData<typeof loader>();
+  const { apiKey, settings, seenGateways, applied, failed } = useLoaderData<typeof loader>();
   const result = useActionData<typeof action>();
   const errors = result && "errors" in result ? result.errors : undefined;
   const saving = useNavigation().state === "submitting";
   const shopify = useAppBridge();
 
   useEffect(() => {
-    if (result && "message" in result && result.message) shopify.toast.show(result.message);
+    if (result && "message" in result && result.message) {
+      shopify.toast.show(result.message, { isError: !result.ok });
+    }
   }, [result, shopify]);
 
   const checkoutText = `Get ${settings.percent}% off when you pay by ${settings.gateways[0] ?? "bank transfer"}. The discount is applied automatically after you place your order, and we'll email you the final amount to pay.`;
@@ -206,6 +219,50 @@ export default function Index() {
           Shipping is not discounted, and orders that are already paid are
           skipped.
         </s-paragraph>
+      </s-section>
+
+      <s-section heading="Show customers what they save">
+        <s-paragraph>
+          On the Basic, Shopify and Advanced plans, Shopify doesn&apos;t let
+          apps add banners to the checkout steps. These show the discount just
+          before and just after checkout instead, and update when you save
+          the settings above.
+        </s-paragraph>
+        <s-stack direction="block" gap="base">
+          <s-paragraph>
+            <s-text type="strong">Cart and product pages:</s-text> a banner such
+            as &quot;Pay by {settings.gateways[0] ?? "Bank Deposit"} at checkout
+            and save {settings.percent}%&quot;, with the amount saved worked out
+            from the cart or product price. Each button opens the theme editor
+            with the banner added; click Save there.
+          </s-paragraph>
+          <s-stack direction="inline" gap="base">
+            <s-button
+              href={`shopify://admin/themes/current/editor?template=cart&addAppBlockId=${apiKey}/savings-banner&target=newAppsSection`}
+              target="_top"
+            >
+              Add banner to cart page
+            </s-button>
+            <s-button
+              href={`shopify://admin/themes/current/editor?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`}
+              target="_top"
+            >
+              Add banner to product pages
+            </s-button>
+          </s-stack>
+          <s-paragraph>
+            <s-text type="strong">Thank-you page:</s-text> after ordering with a
+            manual payment method such as Bank Deposit, the customer sees the
+            discount and the amount to pay. To add it, open Settings, then
+            Checkout, click Customize, switch to the Thank you page, and add the
+            &quot;Payment discount amount&quot; app block.
+          </s-paragraph>
+          <s-stack direction="inline" gap="base">
+            <s-button href="shopify://admin/settings/checkout" target="_top">
+              Open checkout settings
+            </s-button>
+          </s-stack>
+        </s-stack>
       </s-section>
 
       <s-section slot="aside" heading="Tell customers at checkout">

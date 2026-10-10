@@ -6,6 +6,7 @@ import {
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import { getSettings, publishSettings, toGraphQL } from "./settings.server";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -16,6 +17,18 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
+  hooks: {
+    // Give the storefront banner and Thank-you page block their settings as
+    // soon as the app is installed, before the merchant saves the form.
+    afterAuth: async ({ session, admin }) => {
+      try {
+        await publishSettings(toGraphQL(admin), await getSettings(session.shop));
+      } catch (err) {
+        // Saving the settings page publishes them again, so don't fail the install.
+        console.error(`${session.shop}: could not publish settings: ${(err as Error).message}`);
+      }
+    },
+  },
   future: {
     expiringOfflineAccessTokens: true,
   },

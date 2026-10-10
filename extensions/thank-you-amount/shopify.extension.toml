@@ -1,0 +1,17 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "Payment discount amount"
+handle = "thank-you-amount"
+type = "ui_extension"
+
+# Thank-you page blocks are available on every plan (the checkout steps
+# themselves need Shopify Plus). The merchant places it in the checkout editor.
+[[extensions.targeting]]
+module = "./src/ThankYou.jsx"
+target = "purchase.thank-you.block.render"
+
+# Written by the app whenever its settings are saved (app/settings.server.ts).
+[[extensions.metafields]]
+namespace = "$app:payment_discount"
+key = "settings"
