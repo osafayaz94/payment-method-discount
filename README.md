@@ -63,6 +63,7 @@ The project is built on Shopify's [React Router app template](https://github.com
 You need Node.js 22.18 or newer and the [Shopify CLI](https://shopify.dev/docs/apps/tools/cli).
 
 ```bash
+cp .env.example .env
 npm install
 npm run dev        # links the app to your Partner/Dev Dashboard account and opens a tunnel
 npm test           # unit tests
@@ -84,7 +85,7 @@ The app subscribes to an order webhook and reads orders. Before installing it on
    - `SHOPIFY_API_SECRET`
    - `SHOPIFY_APP_URL`
    - `SCOPES=read_orders,write_orders,write_order_edits`
-3. Run `npm run setup` once to create the database tables, then `npm run start`.
+3. The `Dockerfile` keeps the database at `/data/app.sqlite` (`DATABASE_URL`). Mount a persistent volume at `/data`, or the shops' sessions and settings are lost on every redeploy. Without Docker, set `DATABASE_URL` yourself and run `npm run setup` once, then `npm run start`.
 4. Run `npm run deploy` to push `shopify.app.toml` (scopes and webhooks) to Shopify.
 
 SQLite is fine for a single server. For more than one instance, switch the Prisma datasource to Postgres or MySQL.
