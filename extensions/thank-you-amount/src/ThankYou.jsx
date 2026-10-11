@@ -22,6 +22,12 @@ function Extension() {
     ) : null;
   }
   if (!settings.enabled || !(settings.percent > 0)) return null;
+  // A payment method chosen in the pop-up before checkout means the discount
+  // was already taken off at checkout; showing it again would double it.
+  const choseBeforeCheckout = (shopify.attributes?.value ?? []).some(
+    (attribute) => attribute.key === '_payment_choice',
+  );
+  if (choseBeforeCheckout && !inEditor) return null;
 
   // Checkout only says what type of method was used, not its name. Bank
   // Deposit and other manual methods are 'manualPayment' ('other' is allowed

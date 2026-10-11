@@ -1,0 +1,21 @@
+query CartInput {
+  cart {
+    # Set by the "How would you like to pay?" pop-up (theme app embed):
+    # "bank", "card" or "cod".
+    choice: attribute(key: "_payment_choice") {
+      value
+    }
+    lines {
+      id
+    }
+  }
+  discount {
+    discountClasses
+  }
+  # The app's settings, written on every save (app/settings.server.ts).
+  shop {
+    settings: metafield(namespace: "$app:payment_discount", key: "settings") {
+      jsonValue
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   APPLIED_TAG,
+  CHOICE_ATTRIBUTE,
   FAILED_TAG,
   applyDiscount,
   parseGateways,
@@ -16,6 +17,9 @@ const settings: DiscountSettings = {
   gateways: ["Bank Deposit"],
   label: "Bank Deposit discount",
   notifyCustomer: true,
+  cardDiscount: false,
+  cardLabel: "Card payment discount",
+  codGateways: ["Cash on Delivery (COD)"],
 };
 
 const unpaidBankOrder: OrderForDiscount = {
@@ -57,6 +61,11 @@ test("an order already discounted is skipped", () => {
 test("paid and cancelled orders are skipped", () => {
   assert.match(skipReason({ ...unpaidBankOrder, displayFinancialStatus: "PAID" }, settings)!, /PAID/);
   assert.equal(skipReason({ ...unpaidBankOrder, cancelledAt: "2026-10-10T00:00:00Z" }, settings), "order is cancelled");
+});
+
+test("orders whose payment method was chosen before checkout are skipped", () => {
+  const order = { ...unpaidBankOrder, customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "bank" }] };
+  assert.equal(skipReason(order, settings), "payment method chosen before checkout, discount given there");
 });
 
 test("payment methods are read one per line or comma separated", () => {

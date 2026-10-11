@@ -1,0 +1,42 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "cart": {
+        "choice": null,
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/1"
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": [
+          "ORDER"
+        ]
+      },
+      "shop": {
+        "settings": {
+          "jsonValue": {
+            "enabled": true,
+            "percent": 5,
+            "gateways": [
+              "Bank Deposit"
+            ],
+            "label": "Bank Deposit discount",
+            "cardDiscount": false,
+            "cardLabel": "Card payment discount",
+            "codGateways": [
+              "Cash on Delivery (COD)"
+            ],
+            "notifyCustomer": true
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": []
+    }
+  }
+}

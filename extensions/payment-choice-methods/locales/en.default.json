@@ -1,0 +1,4 @@
+{
+  "name": "Payment choice methods",
+  "description": "Only offers the payment method the customer chose before checkout"
+}

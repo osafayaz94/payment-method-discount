@@ -1,0 +1,4 @@
+{
+  "name": "Payment choice discount",
+  "description": "Takes the discount off orders whose customer chose a discounted payment method before checkout"
+}

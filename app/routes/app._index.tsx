@@ -14,7 +14,13 @@ import {
   applyDiscount,
   parseGateways,
 } from "../discount";
-import { getSettings, publishSettings, saveSettings, toGraphQL } from "../settings.server";
+import {
+  ensureCheckoutSetup,
+  getSettings,
+  publishSettings,
+  saveSettings,
+  toGraphQL,
+} from "../settings.server";
 
 type OrderRow = {
   id: string;
@@ -116,10 +122,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const percent = Number(form.get("percent"));
   const gateways = parseGateways(String(form.get("gateways") ?? ""));
   const label = String(form.get("label") ?? "").trim();
+  const cardLabel = String(form.get("cardLabel") ?? "").trim();
+  const codGateways = parseGateways(String(form.get("codGateways") ?? ""));
   const errors: Record<string, string> = {};
   if (!(percent > 0 && percent <= 100)) errors.percent = "Enter a number above 0 and up to 100";
   if (!gateways.length) errors.gateways = "Enter at least one payment method";
   if (!label) errors.label = "Enter a label";
+  if (!cardLabel) errors.cardLabel = "Enter a label";
   if (Object.keys(errors).length) return { ok: false, errors };
 
   const settings = {
@@ -128,14 +137,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     gateways,
     label,
     notifyCustomer: form.get("notifyCustomer") !== null,
+    cardDiscount: form.get("cardDiscount") !== null,
+    cardLabel,
+    codGateways,
   };
   await saveSettings(session.shop, settings);
+  const graphql = toGraphQL(admin);
   try {
-    await publishSettings(toGraphQL(admin), settings);
+    await publishSettings(graphql, settings);
+    await ensureCheckoutSetup(graphql, session.shop);
   } catch (err) {
     return {
       ok: false,
-      message: `Settings saved, but the store banners were not updated: ${(err as Error).message}`,
+      message: `Settings saved, but the store was not fully updated: ${(err as Error).message}`,
     };
   }
   return { ok: true, message: "Settings saved" };
@@ -178,7 +192,7 @@ export default function Index() {
             />
             <s-text-area
               name="gateways"
-              label="Payment methods that get the discount"
+              label="Bank transfer payment methods (get the discount)"
               rows={3}
               defaultValue={settings.gateways.join("\n")}
               details={
@@ -199,6 +213,25 @@ export default function Index() {
               name="notifyCustomer"
               label="Email the customer the new total"
               defaultChecked={settings.notifyCustomer}
+            />
+            <s-checkbox
+              name="cardDiscount"
+              label="Credit and debit cards also get the discount"
+              details="Only when the customer picks card in the payment pop-up before checkout; the card is then charged the lower amount."
+              defaultChecked={settings.cardDiscount}
+            />
+            <s-text-field
+              name="cardLabel"
+              label="Card discount label"
+              defaultValue={settings.cardLabel}
+              error={errors?.cardLabel}
+            />
+            <s-text-area
+              name="codGateways"
+              label="Cash on delivery payment methods"
+              rows={2}
+              defaultValue={settings.codGateways.join("\n")}
+              details="One per line, as named at checkout. Customers who pick cash on delivery in the pop-up only see these; customers who pick bank transfer or card never do."
             />
             <s-button type="submit" variant="primary" {...(saving ? { loading: true } : {})}>
               Save
@@ -242,6 +275,31 @@ export default function Index() {
           Shipping is not discounted, and orders that are already paid are
           skipped.
         </s-paragraph>
+      </s-section>
+
+      <s-section heading="Payment choice pop-up">
+        <s-paragraph>
+          Asks &quot;How would you like to pay?&quot; when a customer clicks
+          Check out or Buy it now: bank transfer with {settings.percent}% off,
+          card{settings.cardDiscount ? ` with ${settings.percent}% off` : ""},
+          or cash on delivery at full price. The discount then shows in
+          checkout before they pay, and checkout only offers the method they
+          picked. Works on every plan.
+        </s-paragraph>
+        <s-paragraph>
+          The button opens the theme editor with the pop-up switched on under
+          App embeds; click Save there. The pop-up replaces the theme&apos;s
+          Buy it now button and hides express buttons such as Shop Pay, which
+          would skip it; both can be changed in the embed&apos;s settings.
+        </s-paragraph>
+        <s-stack direction="inline" gap="base">
+          <s-button
+            href={`shopify://admin/themes/current/editor?context=apps&activateAppId=${apiKey}/payment-choice`}
+            target="_top"
+          >
+            Turn on the pop-up
+          </s-button>
+        </s-stack>
       </s-section>
 
       <s-section heading="Show customers what they save">

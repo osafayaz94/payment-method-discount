@@ -1,0 +1,40 @@
+{
+  "payload": {
+    "export": "cart-payment-methods-transform-run",
+    "target": "cart.payment-methods.transform.run",
+    "input": {
+      "cart": {
+        "choice": {
+          "value": "bank"
+        }
+      },
+      "paymentMethods": [
+        {
+          "id": "gid://shopify/PaymentCustomizationPaymentMethod/2",
+          "name": "Cash on Delivery (COD)"
+        }
+      ],
+      "shop": {
+        "settings": {
+          "jsonValue": {
+            "enabled": true,
+            "percent": 5,
+            "gateways": [
+              "Bank Deposit"
+            ],
+            "label": "Bank Deposit discount",
+            "cardDiscount": false,
+            "cardLabel": "Card payment discount",
+            "codGateways": [
+              "Cash on Delivery (COD)"
+            ],
+            "notifyCustomer": true
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": []
+    }
+  }
+}

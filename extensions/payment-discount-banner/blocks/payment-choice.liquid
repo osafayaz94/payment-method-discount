@@ -1,0 +1,134 @@
+{%- comment -%}
+  "How would you like to pay?" pop-up, shown when a customer clicks Check out
+  or Buy it now. Their choice travels to checkout as the _payment_choice cart
+  attribute, where the discount function takes the percentage off (bank
+  transfer, and card if turned on) and the payment customization function
+  only offers the chosen method. Settings come from the app
+  (app/settings.server.ts publishes them).
+{%- endcomment -%}
+{%- assign discount = app.metafields.payment_discount.settings.value -%}
+
+{%- if discount and discount.enabled and discount.percent > 0 -%}
+  {%- capture variant_prices -%}
+    {%- if product -%}
+      {%- for variant in product.variants -%}
+        "{{ variant.id }}": {{ variant.price }}{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    {%- endif -%}
+  {%- endcapture -%}
+  <script type="application/json" id="payment-choice-config">
+    {
+      "percent": {{ discount.percent | json }},
+      "cardDiscount": {% if discount.cardDiscount %}true{% else %}false{% endif %},
+      "showCard": {{ block.settings.show_card | json }},
+      "defaultChoice": {{ block.settings.default_choice | json }},
+      "replaceBuyNow": {{ block.settings.replace_buy_now | json }},
+      "hideExpress": {{ block.settings.hide_express | json }},
+      "moneyFormat": {{ shop.money_format | json }},
+      "root": {{ routes.root_url | json }},
+      "variantPrices": { {{ variant_prices }} },
+      "text": {
+        "heading": {{ block.settings.heading | json }},
+        "bank": {{ block.settings.bank_label | json }},
+        "card": {{ block.settings.card_label | json }},
+        "cod": {{ block.settings.cod_label | json }},
+        "save": {{ block.settings.save_text | json }},
+        "fullPrice": {{ block.settings.full_price_text | json }},
+        "button": {{ block.settings.button_text | json }},
+        "buyNow": {{ block.settings.buy_now_text | json }},
+        "close": "Close"
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="{{ 'payment-choice.css' | asset_url }}">
+  <script src="{{ 'payment-choice.js' | asset_url }}" defer></script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Payment choice pop-up",
+  "target": "body",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "How would you like to pay?"
+    },
+    {
+      "type": "text",
+      "id": "bank_label",
+      "label": "Bank transfer option",
+      "default": "Bank transfer"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_card",
+      "label": "Show a card option",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "card_label",
+      "label": "Card option",
+      "default": "Credit / debit card"
+    },
+    {
+      "type": "text",
+      "id": "cod_label",
+      "label": "Cash on delivery option",
+      "default": "Cash on Delivery"
+    },
+    {
+      "type": "text",
+      "id": "save_text",
+      "label": "Saving text",
+      "default": "Save [percent] ([amount] off)",
+      "info": "[percent] and [amount] are filled in from the app's settings and the order total."
+    },
+    {
+      "type": "text",
+      "id": "full_price_text",
+      "label": "Full price text",
+      "default": "Full price"
+    },
+    {
+      "type": "select",
+      "id": "default_choice",
+      "label": "Selected at first",
+      "options": [
+        { "value": "bank", "label": "Bank transfer" },
+        { "value": "card", "label": "Card" },
+        { "value": "cod", "label": "Cash on delivery" }
+      ],
+      "default": "bank"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button",
+      "default": "Continue to checkout"
+    },
+    {
+      "type": "checkbox",
+      "id": "replace_buy_now",
+      "label": "Replace the Buy it now button",
+      "default": true,
+      "info": "Shows this pop-up first instead of going straight to checkout."
+    },
+    {
+      "type": "text",
+      "id": "buy_now_text",
+      "label": "Buy it now button",
+      "default": "Buy it now"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_express",
+      "label": "Hide express checkout buttons",
+      "default": true,
+      "info": "Buttons such as Shop Pay and PayPal on product and cart pages skip the pop-up, so their orders get no discount."
+    }
+  ]
+}
+{% endschema %}

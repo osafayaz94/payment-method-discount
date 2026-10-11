@@ -43,5 +43,14 @@ model Settings {
   gateways       String   @default("Bank Deposit")
   label          String   @default("Bank Deposit discount")
   notifyCustomer Boolean  @default(true)
+  // Card payments chosen in the pop-up before checkout get the discount too.
+  cardDiscount   Boolean  @default(false)
+  cardLabel      String   @default("Card payment discount")
+  // Cash on delivery method names, one per line, as they appear at checkout.
+  codGateways    String   @default("Cash on Delivery (COD)")
+  // The automatic discount and payment customization the app created for
+  // the pop-up, so they are only created once.
+  discountId             String?
+  paymentCustomizationId String?
   updatedAt      DateTime @updatedAt
 }

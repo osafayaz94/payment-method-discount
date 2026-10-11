@@ -8,6 +8,9 @@ export type DiscountSettings = {
   gateways: string[];
   label: string;
   notifyCustomer: boolean;
+  cardDiscount: boolean;
+  cardLabel: string;
+  codGateways: string[];
 };
 
 export type OrderForDiscount = {
@@ -17,6 +20,7 @@ export type OrderForDiscount = {
   cancelledAt: string | null;
   displayFinancialStatus: string | null;
   paymentGatewayNames: string[];
+  customAttributes?: { key: string; value: string | null }[];
 };
 
 export type GraphQL = (
@@ -27,6 +31,10 @@ export type GraphQL = (
 export type DiscountResult =
   | { applied: true; total: { amount: string; currencyCode: string } }
   | { applied: false; reason: string };
+
+// Cart attribute set by the "How would you like to pay?" pop-up. Orders that
+// carry it got their discount at checkout from the discount function.
+export const CHOICE_ATTRIBUTE = "_payment_choice";
 
 // Tags written on orders, so merchants can filter for them in the admin.
 export const APPLIED_TAG = "payment-discount";
@@ -41,6 +49,7 @@ const ORDER_QUERY = `#graphql
       cancelledAt
       displayFinancialStatus
       paymentGatewayNames
+      customAttributes { key value }
     }
   }`;
 
@@ -107,6 +116,9 @@ export function skipReason(
   const used = order.paymentGatewayNames ?? [];
   if (!used.some((g) => wanted.includes(g.trim().toLowerCase()))) {
     return `paid with ${used.join(", ") || "no payment method"}`;
+  }
+  if (order.customAttributes?.some((a) => a.key === CHOICE_ATTRIBUTE)) {
+    return "payment method chosen before checkout, discount given there";
   }
   const tags = order.tags.map((t) => t.toLowerCase());
   if (tags.includes(APPLIED_TAG)) return "discount already applied";

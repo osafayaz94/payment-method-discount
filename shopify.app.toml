@@ -8,7 +8,7 @@ embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_orders,write_orders,write_order_edits"
+scopes = "read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations"
 
 [auth]
 redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]

@@ -1,0 +1,46 @@
+{
+  "payload": {
+    "export": "cart-payment-methods-transform-run",
+    "target": "cart.payment-methods.transform.run",
+    "input": {
+      "cart": {
+        "choice": null
+      },
+      "paymentMethods": [
+        {
+          "id": "gid://shopify/PaymentCustomizationPaymentMethod/1",
+          "name": "Bank Deposit"
+        },
+        {
+          "id": "gid://shopify/PaymentCustomizationPaymentMethod/2",
+          "name": "Cash on Delivery (COD)"
+        },
+        {
+          "id": "gid://shopify/PaymentCustomizationPaymentMethod/3",
+          "name": "Credit card"
+        }
+      ],
+      "shop": {
+        "settings": {
+          "jsonValue": {
+            "enabled": true,
+            "percent": 5,
+            "gateways": [
+              "Bank Deposit"
+            ],
+            "label": "Bank Deposit discount",
+            "cardDiscount": false,
+            "cardLabel": "Card payment discount",
+            "codGateways": [
+              "Cash on Delivery (COD)"
+            ],
+            "notifyCustomer": true
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": []
+    }
+  }
+}

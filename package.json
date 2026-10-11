@@ -86,6 +86,7 @@
     "prisma": true,
     "esbuild": true,
     "@parcel/watcher": false,
-    "unrs-resolver": false
+    "unrs-resolver": false,
+    "core-js": false
   }
 }
