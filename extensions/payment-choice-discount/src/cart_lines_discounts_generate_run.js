@@ -23,6 +23,11 @@ export function cartLinesDiscountsGenerateRun(input) {
   if (!settings?.enabled || !(settings.percent > 0) || !input.cart.lines.length) {
     return NO_DISCOUNT;
   }
+  // The plan's discounted orders for this month are used up ("2026-10");
+  // discounts come back on the 1st of next month.
+  if (settings.pausedMonth && input.shop.localTime.date.startsWith(settings.pausedMonth)) {
+    return NO_DISCOUNT;
+  }
   if (!input.discount.discountClasses.includes(DiscountClass.Order)) return NO_DISCOUNT;
 
   let message;

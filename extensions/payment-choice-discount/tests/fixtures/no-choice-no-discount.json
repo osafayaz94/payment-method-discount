@@ -17,6 +17,9 @@
         ]
       },
       "shop": {
+        "localTime": {
+          "date": "2026-10-31"
+        },
         "settings": {
           "jsonValue": {
             "enabled": true,

@@ -30,7 +30,7 @@ export type GraphQL = (
 
 export type DiscountResult =
   | { applied: true; total: { amount: string; currencyCode: string } }
-  | { applied: false; reason: string };
+  | { applied: false; reason: string; discountedAtCheckout?: boolean };
 
 // Cart attribute set by the "How would you like to pay?" pop-up. Orders that
 // carry it got their discount at checkout from the discount function.
@@ -132,34 +132,39 @@ export function skipReason(
 // Applies the discount to every unfulfilled line item in one order edit, then
 // tags the order so it is never discounted twice. If anything fails, the edit
 // is never committed (so the order is unchanged) and the order is tagged for
-// the merchant to retry from the app.
+// the merchant to retry from the app. `limit` says why the shop's plan allows
+// no more discounts this month, if it doesn't.
 export async function applyDiscount(
   graphql: GraphQL,
   orderId: string,
   settings: DiscountSettings,
+  limit: string | null = null,
 ): Promise<DiscountResult> {
   const { order } = (await graphql(ORDER_QUERY, { id: orderId })) as {
     order: OrderForDiscount | null;
   };
   // Orders that went through the payment pop-up got their discount at
   // checkout from the discount function; tag the discounted ones so they are
-  // listed with the rest, and never edit them.
+  // listed with the rest, and never edit them. Once the month's limit is
+  // reached the discount function stops too, so those orders got nothing.
   const choice = order?.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
   if (order && choice) {
     const discounted =
-      settings.enabled && (choice === "bank" || (choice === "card" && settings.cardDiscount));
-    if (discounted && !order.tags.map((t) => t.toLowerCase()).includes(APPLIED_TAG)) {
-      await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, [APPLIED_TAG]);
+      settings.enabled &&
+      !limit &&
+      (choice === "bank" || (choice === "card" && settings.cardDiscount));
+    if (!discounted) {
+      return { applied: false, reason: "payment method chosen before checkout, no discount" };
     }
-    return {
-      applied: false,
-      reason: discounted
-        ? "payment method chosen before checkout, discount given there"
-        : "payment method chosen before checkout, no discount",
-    };
+    const reason = "payment method chosen before checkout, discount given there";
+    if (order.tags.map((t) => t.toLowerCase()).includes(APPLIED_TAG)) {
+      return { applied: false, reason };
+    }
+    await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, [APPLIED_TAG]);
+    return { applied: false, reason, discountedAtCheckout: true };
   }
 
-  const reason = skipReason(order, settings);
+  const reason = skipReason(order, settings) ?? limit;
   if (reason || !order) return { applied: false, reason: reason ?? "order not found" };
 
   try {

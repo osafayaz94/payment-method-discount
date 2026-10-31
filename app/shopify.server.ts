@@ -6,7 +6,7 @@ import {
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
-import { ensureCheckoutSetup, getSettings, publishSettings, toGraphQL } from "./settings.server";
+import { ensureCheckoutSetup, publishSettings, toGraphQL } from "./settings.server";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -24,7 +24,7 @@ const shopify = shopifyApp({
     afterAuth: async ({ session, admin }) => {
       try {
         const graphql = toGraphQL(admin);
-        await publishSettings(graphql, await getSettings(session.shop));
+        await publishSettings(graphql, session.shop);
         await ensureCheckoutSetup(graphql, session.shop);
       } catch (err) {
         // Saving the settings page publishes them again, so don't fail the install.

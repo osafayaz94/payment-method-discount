@@ -1,5 +1,7 @@
 import db from "./db.server";
-import { parseGateways, type DiscountSettings, type GraphQL } from "./discount";
+import { applyDiscount, parseGateways, type DiscountSettings, type GraphQL } from "./discount";
+import { countDiscountedOrder, getPlan, getUsage, type PlanCheck } from "./billing.server";
+import { limitReason, monthIn, type Plan } from "./plans";
 
 export async function getSettings(shop: string): Promise<DiscountSettings> {
   const row = await db.settings.findUnique({ where: { shop } });
@@ -47,15 +49,61 @@ export async function saveSettings(shop: string, settings: DiscountSettings) {
 // app-owned one.
 export const SETTINGS_NAMESPACE = "payment_discount";
 
+export type ShopInfo = { id: string; timeZone: string };
+
+export async function getShopInfo(graphql: GraphQL): Promise<ShopInfo> {
+  const { shop } = await graphql(`#graphql
+    query ShopInfo {
+      shop { id ianaTimezone }
+    }`);
+  return { id: shop.id, timeZone: shop.ianaTimezone };
+}
+
+export type PlanState = {
+  plan: PlanCheck;
+  month: string;
+  used: number;
+  // Why discounts are paused this month, or null.
+  limitReason: string | null;
+};
+
+// The shop's plan and how much of this month's limit is used.
+export async function getPlanState(
+  shop: string,
+  info: ShopInfo,
+  { freshPlan = false }: { freshPlan?: boolean } = {},
+): Promise<PlanState> {
+  const plan = await getPlan(shop, info.id, { fresh: freshPlan });
+  const month = monthIn(info.timeZone);
+  const used = await getUsage(shop, month);
+  return { plan, month, used, limitReason: limitReason(plan, used) };
+}
+
+// Settings with what the plan doesn't include switched off.
+export function settingsForPlan(settings: DiscountSettings, plan: Plan): DiscountSettings {
+  return { ...settings, cardDiscount: settings.cardDiscount && plan.cardDiscount };
+}
+
+// Writes the settings, as the shop's plan allows them, to the metafields.
+// When the month's limit is used up, `pausedMonth` names that month: the
+// functions, the theme and the Thank-you block compare it with the current
+// month themselves, so discounts come back on the 1st without the app.
 export async function publishSettings(
   graphql: GraphQL,
-  settings: DiscountSettings,
-) {
-  const { shop, currentAppInstallation } = await graphql(`#graphql
+  shop: string,
+  { freshPlan = false }: { freshPlan?: boolean } = {},
+): Promise<PlanState> {
+  const { shop: owner, currentAppInstallation } = await graphql(`#graphql
     query DiscountOwners {
-      shop { id }
+      shop { id ianaTimezone }
       currentAppInstallation { id }
     }`);
+  const state = await getPlanState(
+    shop,
+    { id: owner.id, timeZone: owner.ianaTimezone },
+    { freshPlan },
+  );
+  const settings = settingsForPlan(await getSettings(shop), state.plan);
   const value = JSON.stringify({
     enabled: settings.enabled,
     percent: settings.percent,
@@ -64,6 +112,9 @@ export async function publishSettings(
     cardDiscount: settings.cardDiscount,
     cardLabel: settings.cardLabel,
     codGateways: settings.codGateways,
+    customize: state.plan.customize,
+    pausedMonth: state.limitReason ? state.month : null,
+    timeZone: owner.ianaTimezone,
   });
   const { metafieldsSet } = await graphql(
     `#graphql
@@ -75,11 +126,30 @@ export async function publishSettings(
     {
       metafields: [
         { ownerId: currentAppInstallation.id, namespace: SETTINGS_NAMESPACE, key: "settings", type: "json", value },
-        { ownerId: shop.id, namespace: `$app:${SETTINGS_NAMESPACE}`, key: "settings", type: "json", value },
+        { ownerId: owner.id, namespace: `$app:${SETTINGS_NAMESPACE}`, key: "settings", type: "json", value },
       ],
     },
   );
   assertNoUserErrors("metafieldsSet", metafieldsSet);
+  return state;
+}
+
+// Runs the discount on one order within the shop's plan, counts it towards
+// the month's limit, and pauses discounts in the store once the limit is
+// reached. Used by the orders/create webhook and the app's page.
+export async function discountOrder(graphql: GraphQL, shop: string, orderId: string) {
+  const info = await getShopInfo(graphql);
+  const state = await getPlanState(shop, info);
+  const settings = settingsForPlan(await getSettings(shop), state.plan);
+  const result = await applyDiscount(graphql, orderId, settings, state.limitReason);
+  let used = state.used;
+  if (result.applied || result.discountedAtCheckout) {
+    used = await countDiscountedOrder(shop, state.month);
+  }
+  if (state.plan.changed || limitReason(state.plan, used) !== state.limitReason) {
+    await publishSettings(graphql, shop);
+  }
+  return { result, settings };
 }
 
 // The pop-up's choice only matters if the two functions are switched on in

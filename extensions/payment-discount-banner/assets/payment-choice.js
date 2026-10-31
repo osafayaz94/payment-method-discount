@@ -14,7 +14,22 @@
   } catch (error) {
     return;
   }
-  var text = config.text;
+  // Own wording is part of the Pro and Advanced plans; otherwise the standard
+  // wording, the same as the embed's defaults.
+  var STANDARD_TEXT = {
+    heading: 'How would you like to pay?',
+    bank: 'Bank transfer',
+    card: 'Credit / debit card',
+    cod: 'Cash on Delivery',
+    save: 'Save [percent] ([amount] off)',
+    fullPrice: 'Full price',
+    total: 'Order total: [amount]',
+    pay: 'You pay [amount]',
+    button: 'Continue to checkout',
+    buyNow: 'Buy it now',
+    close: 'Close',
+  };
+  var text = config.customize ? config.text : STANDARD_TEXT;
   var ATTRIBUTE = '_payment_choice';
 
   // Express buttons (Shop Pay, PayPal...) go straight to checkout and can't be

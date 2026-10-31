@@ -5,8 +5,25 @@
   Settings come from the app (app/settings.server.ts publishes them).
 {%- endcomment -%}
 {%- assign discount = app.metafields.payment_discount.settings.value -%}
+{%- comment -%} Same month as the app and the functions: the store's time zone. {%- endcomment -%}
+{%- assign this_month = 'now' | date: '%Y-%m' -%}
+{%- assign paused = false -%}
+{%- if discount.pausedMonth == this_month -%}{%- assign paused = true -%}{%- endif -%}
 
-{%- if discount and discount.enabled and discount.percent > 0 -%}
+{%- comment -%} Own wording and colours are part of the Pro and Advanced plans. {%- endcomment -%}
+{%- if discount.customize -%}
+  {%- assign text = block.settings.text -%}
+  {%- assign card_name = block.settings.card_name -%}
+  {%- assign background = block.settings.background -%}
+  {%- assign text_color = block.settings.text_color -%}
+{%- else -%}
+  {%- assign text = 'Pay by [method] at checkout and save [percent] ([amount] off).' -%}
+  {%- assign card_name = 'Credit / Debit Card' -%}
+  {%- assign background = '#E8F5E9' -%}
+  {%- assign text_color = '#1B5E20' -%}
+{%- endif -%}
+
+{%- if discount and discount.enabled and discount.percent > 0 and paused == false -%}
   {%- if template.name == 'product' and product -%}
     {%- assign base = product.selected_or_first_available_variant.price -%}
   {%- else -%}
@@ -17,27 +34,36 @@
     {%- comment -%} Rounded down to the cent, as Shopify does for the order discount. {%- endcomment -%}
     {%- assign saving = base | times: discount.percent | divided_by: 100.0 | floor -%}
     {%- assign method = discount.gateways | first | default: 'Bank Deposit' -%}
-    {%- if discount.cardDiscount and block.settings.card_name != blank -%}
-      {%- assign method = method | append: ' or ' | append: block.settings.card_name -%}
+    {%- if discount.cardDiscount and card_name != blank -%}
+      {%- assign method = method | append: ' or ' | append: card_name -%}
     {%- endif -%}
     {%- assign percent = discount.percent | append: '%' -%}
     {%- assign amount = saving | money -%}
-    {%- assign message = block.settings.text
+    {%- assign message = text
       | replace: '[method]', method
       | replace: '[percent]', percent
       | replace: '[amount]', amount
     -%}
     <div
       class="payment-discount-banner"
-      style="background: {{ block.settings.background }}; color: {{ block.settings.text_color }}; padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; line-height: 1.4;"
+      style="background: {{ background }}; color: {{ text_color }}; padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.95em; line-height: 1.4;"
       {{ block.shopify_attributes }}
     >
       {{ message }}
     </div>
+    {%- if request.design_mode and discount.customize != true -%}
+      <p style="margin: -6px 0 12px; font-size: 0.85em; opacity: 0.7;">
+        Only you see this: your own wording and colours need the Pro or Advanced plan of Payment Method Discount.
+      </p>
+    {%- endif -%}
   {%- endif -%}
 {%- elsif request.design_mode -%}
   <div style="padding: 12px 16px; border: 1px dashed #999; border-radius: 8px; margin: 12px 0;" {{ block.shopify_attributes }}>
-    Payment discount banner: open the Payment Method Discount app, turn the discount on and click Save.
+    {%- if paused -%}
+      Payment discount banner: hidden until next month, because this month's discounted orders on your plan are used up. Upgrade in the Payment Method Discount app to show it again.
+    {%- else -%}
+      Payment discount banner: open the Payment Method Discount app, turn the discount on and click Save.
+    {%- endif -%}
   </div>
 {%- endif -%}
 
@@ -54,7 +80,7 @@
       "id": "text",
       "label": "Message",
       "default": "Pay by [method] at checkout and save [percent] ([amount] off).",
-      "info": "[method], [percent] and [amount] are filled in from the app's settings and the cart or product price."
+      "info": "[method], [percent] and [amount] are filled in from the app's settings and the cart or product price. Your own wording and colours need the Pro or Advanced plan."
     },
     {
       "type": "text",

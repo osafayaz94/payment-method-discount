@@ -22,6 +22,11 @@ function Extension() {
     ) : null;
   }
   if (!settings.enabled || !(settings.percent > 0)) return null;
+  // This month's discounted orders on the shop's plan are used up, so the
+  // app won't discount this order either.
+  if (settings.pausedMonth && settings.pausedMonth === currentMonth(settings.timeZone) && !inEditor) {
+    return null;
+  }
   // A payment method chosen in the pop-up before checkout means the discount
   // was already taken off at checkout; showing it again would double it.
   const choseBeforeCheckout = (shopify.attributes?.value ?? []).some(
@@ -86,4 +91,22 @@ function readSettings() {
   } catch {
     return null;
   }
+}
+
+// "2026-10" in the store's time zone, as the app works it out (app/plans.ts).
+function currentMonth(timeZone) {
+  const now = new Date();
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timeZone || 'UTC',
+      year: 'numeric',
+      month: '2-digit',
+    }).formatToParts(now);
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    if (year && month) return `${year}-${month}`;
+  } catch {
+    // Unknown time zone: fall back to UTC.
+  }
+  return now.toISOString().slice(0, 7);
 }

@@ -150,8 +150,42 @@ test("pop-up orders discounted at checkout are tagged, never edited", async () =
   const { graphql, calls } = fakeShopify(order);
   const result = await applyDiscount(graphql, order.id, settings);
 
-  assert.deepEqual(result, { applied: false, reason: "payment method chosen before checkout, discount given there" });
+  assert.deepEqual(result, {
+    applied: false,
+    reason: "payment method chosen before checkout, discount given there",
+    discountedAtCheckout: true,
+  });
   assert.deepEqual(calls.map((c) => c.op), ["OrderForDiscount", "AddTags"]);
+});
+
+test("pop-up orders already tagged are not counted again", async () => {
+  const order = {
+    ...unpaidBankOrder,
+    tags: [APPLIED_TAG],
+    customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "bank" }],
+  };
+  const { graphql, calls } = fakeShopify(order);
+  const result = await applyDiscount(graphql, order.id, settings);
+
+  assert.equal("discountedAtCheckout" in result, false);
+  assert.deepEqual(calls.map((c) => c.op), ["OrderForDiscount"]);
+});
+
+test("once the month's limit is reached, pop-up orders are not tagged", async () => {
+  const order = { ...unpaidBankOrder, customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "bank" }] };
+  const { graphql, calls } = fakeShopify(order);
+  const result = await applyDiscount(graphql, order.id, settings, "limit reached");
+
+  assert.deepEqual(result, { applied: false, reason: "payment method chosen before checkout, no discount" });
+  assert.deepEqual(calls.map((c) => c.op), ["OrderForDiscount"]);
+});
+
+test("once the month's limit is reached, orders are not edited", async () => {
+  const { graphql, calls } = fakeShopify(unpaidBankOrder);
+  const result = await applyDiscount(graphql, unpaidBankOrder.id, settings, "Free plan limit reached");
+
+  assert.deepEqual(result, { applied: false, reason: "Free plan limit reached" });
+  assert.deepEqual(calls.map((c) => c.op), ["OrderForDiscount"]);
 });
 
 test("pop-up orders without a discount (cash on delivery) are left alone", async () => {

@@ -8,18 +8,18 @@ import { Form, useActionData, useFetcher, useLoaderData, useNavigation } from "r
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { APPLIED_TAG, FAILED_TAG, parseGateways } from "../discount";
+import { APP_HANDLE } from "../billing.server";
 import {
-  APPLIED_TAG,
-  FAILED_TAG,
-  applyDiscount,
-  parseGateways,
-} from "../discount";
-import {
+  discountOrder,
   ensureCheckoutSetup,
+  getPlanState,
   getSettings,
+  getShopInfo,
   publishSettings,
   saveSettings,
   toGraphQL,
+  type PlanState,
 } from "../settings.server";
 
 type OrderRow = {
@@ -54,8 +54,28 @@ const ORDERS_QUERY = `#graphql
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
+  const graphql = toGraphQL(admin);
   const settings = await getSettings(session.shop);
-  const data = await toGraphQL(admin)(ORDERS_QUERY, {
+
+  // Publishing on every visit puts a plan change into effect right away:
+  // after picking a plan, Shopify sends the merchant back here with
+  // plan_handle, so the plan is checked again rather than read from cache.
+  let state: PlanState;
+  try {
+    const freshPlan = new URL(request.url).searchParams.has("plan_handle");
+    state = await publishSettings(graphql, session.shop, { freshPlan });
+  } catch (err) {
+    console.error(`${session.shop}: could not publish settings: ${(err as Error).message}`);
+    state = await getPlanState(session.shop, await getShopInfo(graphql));
+  }
+  const [year, month] = state.month.split("-").map(Number);
+  const nextMonth = new Date(Date.UTC(year, month, 1)).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+
+  const data = await graphql(ORDERS_QUERY, {
     applied: `tag:'${APPLIED_TAG}'`,
     failed: `tag:'${FAILED_TAG}'`,
   });
@@ -72,6 +92,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // Used to build theme editor links that add the storefront banner.
     apiKey: process.env.SHOPIFY_API_KEY || "",
     settings,
+    plan: state.plan,
+    used: state.used,
+    paused: Boolean(state.limitReason),
+    nextMonth,
+    // Plan selection page hosted by Shopify (Shopify App Pricing).
+    plansUrl: `shopify://admin/charges/${APP_HANDLE}/pricing_plans`,
     seenGateways,
     applied: data.applied.nodes as OrderRow[],
     failed: data.failed.nodes as OrderRow[],
@@ -103,11 +129,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       orderId = match.id;
     }
     try {
-      const result = await applyDiscount(
-        toGraphQL(admin),
-        orderId,
-        await getSettings(session.shop),
-      );
+      const { result } = await discountOrder(toGraphQL(admin), session.shop, orderId);
       return result.applied
         ? {
             ok: true,
@@ -144,7 +166,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   await saveSettings(session.shop, settings);
   const graphql = toGraphQL(admin);
   try {
-    await publishSettings(graphql, settings);
+    await publishSettings(graphql, session.shop);
     await ensureCheckoutSetup(graphql, session.shop);
   } catch (err) {
     return {
@@ -156,7 +178,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
-  const { apiKey, settings, seenGateways, applied, failed } = useLoaderData<typeof loader>();
+  const { apiKey, settings, plan, used, paused, nextMonth, plansUrl, seenGateways, applied, failed } =
+    useLoaderData<typeof loader>();
   const result = useActionData<typeof action>();
   const errors = result && "errors" in result ? result.errors : undefined;
   const saving = useNavigation().state === "submitting";
@@ -172,6 +195,14 @@ export default function Index() {
 
   return (
     <s-page heading="Payment method discount">
+      <PlanSection
+        plan={plan}
+        used={used}
+        paused={paused}
+        nextMonth={nextMonth}
+        plansUrl={plansUrl}
+      />
+
       <Form method="post" data-save-bar>
         <s-section heading="Discount">
           <s-stack direction="block" gap="base">
@@ -217,8 +248,13 @@ export default function Index() {
             <s-checkbox
               name="cardDiscount"
               label="Credit and debit cards also get the discount"
-              details="Only when the customer picks card in the payment pop-up before checkout; the card is then charged the lower amount."
-              defaultChecked={settings.cardDiscount}
+              details={
+                plan.cardDiscount
+                  ? "Only when the customer picks card in the payment pop-up before checkout; the card is then charged the lower amount."
+                  : "Available on the Pro and Advanced plans."
+              }
+              defaultChecked={settings.cardDiscount && plan.cardDiscount}
+              disabled={!plan.cardDiscount}
             />
             <s-text-field
               name="cardLabel"
@@ -291,6 +327,9 @@ export default function Index() {
           App embeds; click Save there. The pop-up replaces the theme&apos;s
           Buy it now button and hides express buttons such as Shop Pay, which
           would skip it; both can be changed in the embed&apos;s settings.
+          {plan.customize
+            ? " The wording can be changed there too."
+            : " Your own wording and colours need the Pro or Advanced plan; until then the pop-up and banner use the standard ones."}
         </s-paragraph>
         <s-stack direction="inline" gap="base">
           <s-button
@@ -356,6 +395,64 @@ export default function Index() {
         </s-box>
       </s-section>
     </s-page>
+  );
+}
+
+function PlanSection({
+  plan,
+  used,
+  paused,
+  nextMonth,
+  plansUrl,
+}: {
+  plan: { key: string; name: string; limit: number | null; billing: boolean };
+  used: number;
+  paused: boolean;
+  nextMonth: string;
+  plansUrl: string;
+}) {
+  const nearLimit = plan.limit !== null && !paused && used >= plan.limit * 0.8;
+  return (
+    <s-section heading="Plan">
+      <s-stack direction="block" gap="base">
+        {!plan.billing && (
+          <s-banner tone="info" heading="Billing is not set up">
+            The Partner API details are missing on the server, so every
+            feature is unlocked.
+          </s-banner>
+        )}
+        {paused && (
+          <s-banner tone="critical" heading={`Discounts are paused until ${nextMonth}`}>
+            You have given {plan.limit} discounted orders this month, the most
+            the {plan.name} plan includes. Customers pay full price until
+            then. Upgrade to keep giving the discount.
+          </s-banner>
+        )}
+        {nearLimit && (
+          <s-banner tone="warning" heading="Almost at this month's limit">
+            {used} of {plan.limit} discounted orders used. Discounts pause when
+            the limit is reached, until {nextMonth}.
+          </s-banner>
+        )}
+        <s-paragraph>
+          <s-text type="strong">{plan.name} plan:</s-text>{" "}
+          {plan.limit === null
+            ? `${used} discounted orders this month, no limit.`
+            : `${used} of ${plan.limit} discounted orders used this month.`}
+        </s-paragraph>
+        {plan.billing && (
+          <s-stack direction="inline" gap="base">
+            <s-button
+              href={plansUrl}
+              target="_top"
+              variant={plan.key === "advanced" ? "secondary" : "primary"}
+            >
+              {plan.key === "advanced" ? "Change plan" : "Upgrade"}
+            </s-button>
+          </s-stack>
+        )}
+      </s-stack>
+    </s-section>
   );
 }
 

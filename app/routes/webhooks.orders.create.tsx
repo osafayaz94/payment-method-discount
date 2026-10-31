@@ -1,7 +1,6 @@
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-import { applyDiscount } from "../discount";
-import { getSettings, toGraphQL } from "../settings.server";
+import { discountOrder, toGraphQL } from "../settings.server";
 
 // Shopify can deliver the same webhook more than once. The order tag stops a
 // second discount; this set also stops two edits running on one order at once.
@@ -31,8 +30,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   inProgress.add(orderId);
   (async () => {
     try {
-      const settings = await getSettings(shop);
-      const result = await applyDiscount(toGraphQL(admin), orderId, settings);
+      const { result, settings } = await discountOrder(toGraphQL(admin), shop, orderId);
       console.log(
         result.applied
           ? `${shop} ${orderId}: ${settings.percent}% off, new total ${result.total.amount} ${result.total.currencyCode}`

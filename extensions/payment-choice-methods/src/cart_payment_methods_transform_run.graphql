@@ -11,7 +11,12 @@ query CartPaymentMethodsTransformRunInput {
     name
   }
   # The app's settings, written on every save (app/settings.server.ts).
+  # localTime is the store's date, to tell whether this month's discounts are
+  # used up (settings.pausedMonth).
   shop {
+    localTime {
+      date
+    }
     settings: metafield(namespace: "$app:payment_discount", key: "settings") {
       jsonValue
     }

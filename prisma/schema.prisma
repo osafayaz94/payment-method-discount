@@ -52,5 +52,19 @@ model Settings {
   // the pop-up, so they are only created once.
   discountId             String?
   paymentCustomizationId String?
+  // Last plan seen through the Partner API ("free", "pro", "advanced")
+  // and when, so it is only checked every few minutes (app/billing.server.ts).
+  plan           String   @default("free")
+  planCheckedAt  DateTime?
   updatedAt      DateTime @updatedAt
+}
+
+// Discounted orders per shop per calendar month ("2026-10", store time
+// zone), for the plan limits.
+model Usage {
+  shop  String
+  month String
+  count Int    @default(0)
+
+  @@id([shop, month])
 }

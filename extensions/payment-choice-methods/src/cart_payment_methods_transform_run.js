@@ -24,6 +24,11 @@ export function cartPaymentMethodsTransformRun(input) {
   const settings = /** @type {any} */ (input.shop.settings?.jsonValue);
   const choice = input.cart?.choice?.value;
   if (!settings?.enabled || !['bank', 'card', 'cod'].includes(choice ?? '')) return NO_CHANGES;
+  // No discount this month (plan limit reached), so nothing to protect: a
+  // choice left on the cart from earlier shouldn't narrow the methods.
+  if (settings.pausedMonth && input.shop.localTime.date.startsWith(settings.pausedMonth)) {
+    return NO_CHANGES;
+  }
 
   const bank = (settings.gateways ?? []).map(normalize);
   const cod = (settings.codGateways ?? []).map(normalize);
