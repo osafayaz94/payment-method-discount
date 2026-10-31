@@ -237,7 +237,13 @@
       event.stopImmediatePropagation();
       fetch(cartUrl('cart.js'), {headers: {Accept: 'application/json'}})
         .then(function (response) { return response.json(); })
-        .then(function (cart) { open(cart.total_price, goToCheckout); })
+        // items_subtotal_price leaves out order-level discounts, including
+        // this app's own one when an earlier choice is still on the cart, so
+        // the amounts start from the undiscounted items total.
+        .then(function (cart) {
+          var items = typeof cart.items_subtotal_price === 'number' ? cart.items_subtotal_price : cart.total_price;
+          open(items, goToCheckout);
+        })
         .catch(function () { open(0, goToCheckout); });
     },
     true
