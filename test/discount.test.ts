@@ -145,6 +145,28 @@ test("a retried order loses its failed tag once discounted", async () => {
   assert.deepEqual(calls.at(-1), { op: "RemoveTags", variables: { id: unpaidBankOrder.id, tags: [FAILED_TAG] } });
 });
 
+test("pop-up orders discounted at checkout are tagged, never edited", async () => {
+  const order = { ...unpaidBankOrder, customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "bank" }] };
+  const { graphql, calls } = fakeShopify(order);
+  const result = await applyDiscount(graphql, order.id, settings);
+
+  assert.deepEqual(result, { applied: false, reason: "payment method chosen before checkout, discount given there" });
+  assert.deepEqual(calls.map((c) => c.op), ["OrderForDiscount", "AddTags"]);
+});
+
+test("pop-up orders without a discount (cash on delivery) are left alone", async () => {
+  const order = {
+    ...unpaidBankOrder,
+    paymentGatewayNames: ["Cash on Delivery (COD)"],
+    customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "cod" }],
+  };
+  const { graphql, calls } = fakeShopify(order);
+  const result = await applyDiscount(graphql, order.id, settings);
+
+  assert.equal(result.applied, false);
+  assert.deepEqual(calls.map((c) => c.op), ["OrderForDiscount"]);
+});
+
 test("cash on delivery orders are only read, never edited", async () => {
   const order = { ...unpaidBankOrder, paymentGatewayNames: ["Cash on Delivery (COD)"] };
   const { graphql, calls } = fakeShopify(order);

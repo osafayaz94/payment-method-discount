@@ -141,6 +141,24 @@ export async function applyDiscount(
   const { order } = (await graphql(ORDER_QUERY, { id: orderId })) as {
     order: OrderForDiscount | null;
   };
+  // Orders that went through the payment pop-up got their discount at
+  // checkout from the discount function; tag the discounted ones so they are
+  // listed with the rest, and never edit them.
+  const choice = order?.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
+  if (order && choice) {
+    const discounted =
+      settings.enabled && (choice === "bank" || (choice === "card" && settings.cardDiscount));
+    if (discounted && !order.tags.map((t) => t.toLowerCase()).includes(APPLIED_TAG)) {
+      await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, [APPLIED_TAG]);
+    }
+    return {
+      applied: false,
+      reason: discounted
+        ? "payment method chosen before checkout, discount given there"
+        : "payment method chosen before checkout, no discount",
+    };
+  }
+
   const reason = skipReason(order, settings);
   if (reason || !order) return { applied: false, reason: reason ?? "order not found" };
 
