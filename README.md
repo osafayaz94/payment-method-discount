@@ -65,9 +65,26 @@ Shopify only lets Plus stores add banners to the checkout steps. On every plan, 
 
 Both read the app's settings from metafields that the app writes on install and whenever the settings are saved.
 
+## Plans
+
+| Plan | Price | Includes |
+|---|---|---|
+| Free | $0 | Up to 10 discounted orders a month, bank transfer discount, pop-up and banner |
+| Pro | $4.99/month or $45/year | Up to 30 discounted orders a month, card discounts, own wording and colours for the pop-up and banner, priority email support |
+| Advanced | $9.99/month or $90/year | Unlimited discounted orders, everything in Pro |
+
+Prices, yearly options and trials are set in the Partner Dashboard with [Shopify App Pricing](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing); Shopify hosts the plan selection page and charges the merchant. The app only decides what each plan allows (`app/plans.ts`):
+- **Monthly limit**: every discounted order (pop-up or after-order) counts, per calendar month in the store's time zone. When the limit is reached, the app publishes `pausedMonth` to the settings metafield. The discount function, the payment customization function, the pop-up, the banner and the Thank-you block then stop for the rest of that month, and come back on the 1st by themselves. The after-order fallback skips orders too.
+- **Card discounts** and **own wording and colours** need Pro or Advanced. On Free, the pop-up and banner use the standard wording and colours, whatever is set in the theme editor.
+
+The plan is read from the Partner API's [Active Subscription API](https://shopify.dev/docs/api/partner/latest/active-subscription), at most every 10 minutes per shop, and right away when Shopify sends the merchant back to the app after picking a plan. Plans are told apart by their handle, so name them **Pro** and **Advanced**. A paid plan with any other handle counts as Advanced. If the Partner API can't be reached, the last known plan is used.
+
+Without the Partner API settings below, billing is off and every feature is unlocked (for development). The app's page then says so.
+
 ## The app's page
 
 Merchants open the app from **Apps** in the Shopify admin. The page has:
+- **Plan**: the current plan, discounted orders used this month, and an Upgrade button to Shopify's plan selection page. Shows a warning near the limit, and says when discounts are paused.
 - **Discount**: on/off switch, percentage, bank transfer payment methods (with the names seen on recent orders, for exact spelling), label, whether to email the customer, whether cards also get the discount (and their label), and the cash on delivery method names
 - **Apply to an order**: runs the discount on an order number, for orders placed while the app was offline
 - **Payment choice pop-up**: a button that turns the pop-up on in the theme editor
@@ -81,7 +98,9 @@ Merchants open the app from **Apps** in the Shopify admin. The page has:
 | Path | What it is |
 |---|---|
 | `app/discount.ts` | Core logic: who qualifies, and the order edit. It has no framework imports, so it is easy to test. |
-| `app/settings.server.ts` | Saves and loads each shop's settings (Prisma), and publishes them to metafields for the extensions |
+| `app/settings.server.ts` | Saves and loads each shop's settings (Prisma), publishes them to metafields for the extensions as the plan allows, and runs the discount on an order within the plan |
+| `app/plans.ts` | What each plan allows, and the store's month |
+| `app/billing.server.ts` | Reads the plan from the Partner API, and counts discounted orders per month |
 | `app/routes/app._index.tsx` | Settings page shown in the Shopify admin |
 | `app/routes/webhooks.orders.create.tsx` | Runs the discount on new orders |
 | `app/routes/webhooks.compliance.tsx` | Required privacy webhooks |
@@ -89,9 +108,10 @@ Merchants open the app from **Apps** in the Shopify admin. The page has:
 | `extensions/payment-choice-discount/` | Discount function: the percentage off for the chosen method |
 | `extensions/payment-choice-methods/` | Payment customization function: only the chosen method at checkout |
 | `extensions/thank-you-amount/` | Thank-you page block (checkout UI extension) |
-| `prisma/schema.prisma` | `Session` (from the template) and `Settings` tables |
+| `prisma/schema.prisma` | `Session` (from the template), `Settings` and `Usage` (discounted orders per month) tables |
 | `shopify.app.toml` | Scopes and webhook subscriptions |
 | `test/discount.test.ts` | Tests against a fake Admin API |
+| `test/plans.test.ts` | Plan limits and months |
 
 Access scopes: `read_orders`, `write_orders`, `write_order_edits`, `write_discounts`, `write_payment_customizations`.
 
@@ -126,6 +146,7 @@ The app subscribes to an order webhook and reads orders. Before installing it on
    - `SHOPIFY_API_SECRET`
    - `SHOPIFY_APP_URL`
    - `SCOPES=read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations`
+   - For billing (see Plans): `SHOPIFY_PARTNER_ORG_ID` (the number in your Partner Dashboard URL), `SHOPIFY_PARTNER_API_ACCESS_TOKEN` (a Partner API client with the **Manage apps** permission), `SHOPIFY_APP_GID` (`gid://shopify/App/<number in the app's Partner Dashboard URL>`), and `SHOPIFY_APP_HANDLE` if the app's handle isn't `payment-method-discount`
 3. The `Dockerfile` keeps the database at `/data/app.sqlite` (`DATABASE_URL`). Mount a persistent volume at `/data`, or the shops' sessions and settings are lost on every redeploy. Without Docker, set `DATABASE_URL` yourself and run `npm run setup` once, then `npm run start`.
 4. Run `npm run deploy` to push `shopify.app.toml` (scopes and webhooks) to Shopify.
 
