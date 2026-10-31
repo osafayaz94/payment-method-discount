@@ -17,6 +17,9 @@
     {%- comment -%} Rounded down to the cent, as Shopify does for the order discount. {%- endcomment -%}
     {%- assign saving = base | times: discount.percent | divided_by: 100.0 | floor -%}
     {%- assign method = discount.gateways | first | default: 'Bank Deposit' -%}
+    {%- if discount.cardDiscount and block.settings.card_name != blank -%}
+      {%- assign method = method | append: ' or ' | append: block.settings.card_name -%}
+    {%- endif -%}
     {%- assign percent = discount.percent | append: '%' -%}
     {%- assign amount = saving | money -%}
     {%- assign message = block.settings.text
@@ -52,6 +55,13 @@
       "label": "Message",
       "default": "Pay by [method] at checkout and save [percent] ([amount] off).",
       "info": "[method], [percent] and [amount] are filled in from the app's settings and the cart or product price."
+    },
+    {
+      "type": "text",
+      "id": "card_name",
+      "label": "Card name in [method]",
+      "default": "Credit / Debit Card",
+      "info": "When cards also get the discount in the app, [method] reads \"Bank Deposit or\" followed by this."
     },
     {
       "type": "color",
