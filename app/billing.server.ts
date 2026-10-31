@@ -17,7 +17,7 @@ export function billingConfigured() {
 
 // The app's handle, for the plan selection page Shopify hosts at
 // admin/charges/<handle>/pricing_plans.
-export const APP_HANDLE = process.env.SHOPIFY_APP_HANDLE || "payment-method-discount";
+export const APP_HANDLE = process.env.SHOPIFY_APP_HANDLE || "payment-method-discount-12";
 
 async function fetchActiveSubscription(shopGid: string): Promise<ActiveSubscription> {
   const res = await fetch(

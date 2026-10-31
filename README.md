@@ -146,7 +146,7 @@ The app subscribes to an order webhook and reads orders. Before installing it on
    - `SHOPIFY_API_SECRET`
    - `SHOPIFY_APP_URL`
    - `SCOPES=read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations`
-   - For billing (see Plans): `SHOPIFY_PARTNER_ORG_ID` (the number in your Partner Dashboard URL), `SHOPIFY_PARTNER_API_ACCESS_TOKEN` (a Partner API client with the **Manage apps** permission), `SHOPIFY_APP_GID` (`gid://shopify/App/<number in the app's Partner Dashboard URL>`), and `SHOPIFY_APP_HANDLE` if the app's handle isn't `payment-method-discount`
+   - For billing (see Plans): `SHOPIFY_PARTNER_ORG_ID` (the number in your Partner Dashboard URL), `SHOPIFY_PARTNER_API_ACCESS_TOKEN` (a Partner API client with the **Manage apps** permission), `SHOPIFY_APP_GID` (`gid://shopify/App/<number in the app's Partner Dashboard URL>`), and `SHOPIFY_APP_HANDLE` if the app's handle isn't `payment-method-discount-12` (it is in the app's admin URL: admin.shopify.com/store/<store>/apps/<handle>)
 3. The `Dockerfile` keeps the database at `/data/app.sqlite` (`DATABASE_URL`). Mount a persistent volume at `/data`, or the shops' sessions and settings are lost on every redeploy. Without Docker, set `DATABASE_URL` yourself and run `npm run setup` once, then `npm run start`.
 4. Run `npm run deploy` to push `shopify.app.toml` (scopes and webhooks) to Shopify.
 
