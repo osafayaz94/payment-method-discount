@@ -34,6 +34,8 @@
         "cod": {{ block.settings.cod_label | json }},
         "save": {{ block.settings.save_text | json }},
         "fullPrice": {{ block.settings.full_price_text | json }},
+        "total": {{ block.settings.total_text | json }},
+        "pay": {{ block.settings.pay_text | json }},
         "button": {{ block.settings.button_text | json }},
         "buyNow": {{ block.settings.buy_now_text | json }},
         "close": "Close"
@@ -91,6 +93,19 @@
       "id": "full_price_text",
       "label": "Full price text",
       "default": "Full price"
+    },
+    {
+      "type": "text",
+      "id": "total_text",
+      "label": "Order total text",
+      "default": "Order total: [amount]",
+      "info": "Shown under the heading; leave empty to hide. Items only: shipping is added at checkout."
+    },
+    {
+      "type": "text",
+      "id": "pay_text",
+      "label": "Amount to pay text",
+      "default": "You pay [amount]"
     },
     {
       "type": "select",

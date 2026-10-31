@@ -74,7 +74,7 @@
   var onContinue;
   var lastFocus;
 
-  function option(value, label, detail, discounted) {
+  function option(value, label, detail, discounted, pay) {
     var wrapper = document.createElement('label');
     wrapper.className = 'pc-option' + (discounted ? ' pc-option--discounted' : '');
     var input = document.createElement('input');
@@ -90,6 +90,12 @@
     wrapper.appendChild(input);
     wrapper.appendChild(name);
     wrapper.appendChild(note);
+    if (pay) {
+      var amount = document.createElement('span');
+      amount.className = 'pc-option__pay';
+      amount.textContent = pay;
+      wrapper.appendChild(amount);
+    }
     return wrapper;
   }
 
@@ -113,6 +119,11 @@
     var amount = formatMoney(saving(totalCents));
     var percent = config.percent + '%';
     var saveText = text.save.replace('[percent]', percent).replace('[amount]', amount);
+    // What the customer pays with and without the discount (items only:
+    // shipping is added at checkout). Left out if the total isn't known.
+    var known = totalCents > 0;
+    var payDiscounted = known ? text.pay.replace('[amount]', formatMoney(totalCents - saving(totalCents))) : '';
+    var payFull = known ? text.pay.replace('[amount]', formatMoney(totalCents)) : '';
 
     dialog = document.createElement('div');
     dialog.className = 'pc-backdrop';
@@ -138,16 +149,27 @@
     heading.className = 'pc-heading';
     heading.textContent = text.heading;
 
+    var total = null;
+    if (known && text.total) {
+      total = document.createElement('p');
+      total.className = 'pc-total';
+      total.textContent = text.total.replace('[amount]', formatMoney(totalCents));
+    }
+
     var form = document.createElement('form');
     form.className = 'pc-form';
     var list = document.createElement('div');
     list.className = 'pc-options';
     list.setAttribute('role', 'radiogroup');
-    list.appendChild(option('bank', text.bank, saveText, true));
+    list.appendChild(option('bank', text.bank, saveText, true, payDiscounted));
     if (config.showCard) {
-      list.appendChild(option('card', text.card, config.cardDiscount ? saveText : text.fullPrice, config.cardDiscount));
+      list.appendChild(
+        config.cardDiscount
+          ? option('card', text.card, saveText, true, payDiscounted)
+          : option('card', text.card, text.fullPrice, false, payFull)
+      );
     }
-    list.appendChild(option('cod', text.cod, text.fullPrice, false));
+    list.appendChild(option('cod', text.cod, text.fullPrice, false, payFull));
 
     var initial = list.querySelector('input[value="' + config.defaultChoice + '"]') || list.querySelector('input');
     initial.checked = true;
@@ -172,6 +194,7 @@
 
     panel.appendChild(closeButton);
     panel.appendChild(heading);
+    if (total) panel.appendChild(total);
     panel.appendChild(form);
     dialog.appendChild(panel);
     document.body.appendChild(dialog);
