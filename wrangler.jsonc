@@ -11,11 +11,12 @@
   // process.env holds the vars and secrets below, as the Shopify library expects.
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  // Keep variables added in the dashboard (SHOPIFY_APP_URL) on each deploy.
+  // Keep variables added in the dashboard on each deploy.
   "keep_vars": true,
   "vars": {
     "SHOPIFY_API_KEY": "e51d1ea6a855ffacddfdaa9c8550e3e4",
-    "SCOPES": "read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations"
+    "SCOPES": "read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations",
+    "SHOPIFY_APP_URL": "https://payment-method-discount.osafayaz94.workers.dev"
   },
   // Sessions, settings and monthly order counts. The tables are created by
   // the app itself on first use (app/store.ts).

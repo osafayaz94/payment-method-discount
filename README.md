@@ -149,10 +149,9 @@ The app runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/)
 2. Create a **Worker** from this GitHub repository (Workers & Pages, Create, Import a repository). Build command `npm run build`, deploy command `npx wrangler deploy`. Every push to `main` then deploys.
 3. In the Worker's Settings, Variables and Secrets, add:
    - `SHOPIFY_API_SECRET` (type **Secret**): the app's client secret from the Dev Dashboard
-   - `SHOPIFY_APP_URL`: the Worker's address, such as `https://payment-method-discount.<your-subdomain>.workers.dev`
    - For billing (see Plans), as secrets: `SHOPIFY_PARTNER_ORG_ID` (the number in your Partner Dashboard URL), `SHOPIFY_PARTNER_API_ACCESS_TOKEN` (a Partner API client with the **Manage apps** permission), `SHOPIFY_APP_GID` (`gid://shopify/App/<number in the app's Partner Dashboard URL>`), and `SHOPIFY_APP_HANDLE` if the app's handle isn't `payment-method-discount-12` (it is in the app's admin URL: admin.shopify.com/store/<store>/apps/<handle>)
 
-   `SHOPIFY_API_KEY` and `SCOPES` are set in `wrangler.jsonc`. Variables added in the dashboard are kept on each deploy (`keep_vars`).
+   `SHOPIFY_API_KEY`, `SCOPES` and `SHOPIFY_APP_URL` (the Worker's workers.dev address) are set in `wrangler.jsonc`. Variables added in the dashboard are kept on each deploy (`keep_vars`).
 4. Set `application_url` and `redirect_urls` in `shopify.app.toml` to the Worker's address, then run `npm run deploy` to push the app's settings (URLs, scopes and webhooks) and extensions to Shopify.
 
 To try a production build locally: put `SHOPIFY_API_SECRET` and `SHOPIFY_APP_URL=http://localhost:8787` in `.dev.vars` (ignored by git), then `npm run preview`.
