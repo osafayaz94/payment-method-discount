@@ -5,6 +5,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "payment-method-discount",
   "main": "./workers/app.ts",
+  // Served at payment-method-discount.<account subdomain>.workers.dev.
+  "workers_dev": true,
   "compatibility_date": "2026-10-01",
   // process.env holds the vars and secrets below, as the Shopify library expects.
   "compatibility_flags": ["nodejs_compat"],
