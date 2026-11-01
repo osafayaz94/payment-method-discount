@@ -2,8 +2,8 @@
 
 client_id = "e51d1ea6a855ffacddfdaa9c8550e3e4"
 name = "Payment Method Discount"
-# Set to the deployed app's address (for example the Railway domain) before `shopify app deploy`.
-application_url = "https://shopify.dev/apps/default-app-home"
+# The Cloudflare Worker (see README, Deployment).
+application_url = "https://payment-method-discount.osafayaz94.workers.dev"
 embedded = true
 
 [access_scopes]
@@ -11,7 +11,10 @@ embedded = true
 scopes = "read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations"
 
 [auth]
-redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+redirect_urls = [
+  "https://payment-method-discount.osafayaz94.workers.dev/auth/callback",
+  "https://payment-method-discount.osafayaz94.workers.dev/api/auth"
+]
 
 [webhooks]
 api_version = "2026-10"
