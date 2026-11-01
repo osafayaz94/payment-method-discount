@@ -1,11 +1,11 @@
-import "@shopify/shopify-app-react-router/adapters/node";
+import "@shopify/shopify-api/adapters/cf-worker";
 import {
   ApiVersion,
   AppDistribution,
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
-import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
-import prisma from "./db.server";
+import { getDb } from "./db.server";
+import { D1SessionStorage } from "./store";
 import { ensureCheckoutSetup, publishSettings, toGraphQL } from "./settings.server";
 
 const shopify = shopifyApp({
@@ -15,7 +15,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: new PrismaSessionStorage(prisma),
+  sessionStorage: new D1SessionStorage(getDb),
   distribution: AppDistribution.AppStore,
   hooks: {
     // Give the storefront banner, pop-up, Thank-you page block and functions

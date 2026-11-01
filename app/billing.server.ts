@@ -1,4 +1,5 @@
-import db from "./db.server";
+import { getDb } from "./db.server";
+import { getSettingsRow, getUsage as readUsage, incrementUsage, upsertSettings } from "./store";
 import { PLANS, planFromSubscription, type ActiveSubscription, type Plan, type PlanKey } from "./plans";
 
 // Subscriptions come from Shopify App Pricing through the Partner API's
@@ -41,7 +42,10 @@ async function fetchActiveSubscription(shopGid: string): Promise<ActiveSubscript
       }),
     },
   );
-  const body = await res.json().catch(() => ({}));
+  const body = (await res.json().catch(() => ({}))) as {
+    data?: { activeSubscription?: ActiveSubscription };
+    errors?: unknown;
+  };
   // Throw on throttling or other failures so a paying merchant is never
   // treated as having no subscription.
   if (!res.ok || body.errors) {
@@ -68,21 +72,14 @@ export async function getPlan(
 ): Promise<PlanCheck> {
   if (!billingConfigured()) return { ...PLANS.advanced, billing: false, changed: false };
 
-  const row = await db.settings.findUnique({
-    where: { shop },
-    select: { plan: true, planCheckedAt: true },
-  });
+  const row = await getSettingsRow(getDb(), shop);
   const known = PLANS[(row?.plan as PlanKey) ?? "free"] ?? PLANS.free;
   const recent = row?.planCheckedAt && Date.now() - row.planCheckedAt.getTime() < CACHE_MS;
   if (recent && !fresh) return { ...known, billing: true, changed: false };
 
   try {
     const plan = planFromSubscription(await fetchActiveSubscription(shopGid));
-    await db.settings.upsert({
-      where: { shop },
-      create: { shop, plan: plan.key, planCheckedAt: new Date() },
-      update: { plan: plan.key, planCheckedAt: new Date() },
-    });
+    await upsertSettings(getDb(), shop, { plan: plan.key, planCheckedAt: new Date() });
     return { ...plan, billing: true, changed: plan.key !== known.key };
   } catch (err) {
     console.error(`${shop}: could not check the plan: ${(err as Error).message}`);
@@ -92,16 +89,10 @@ export async function getPlan(
 
 // Discounted orders so far in the given month ("2026-10").
 export async function getUsage(shop: string, month: string): Promise<number> {
-  const row = await db.usage.findUnique({ where: { shop_month: { shop, month } } });
-  return row?.count ?? 0;
+  return readUsage(getDb(), shop, month);
 }
 
 // Counts one more discounted order and returns the new total for the month.
 export async function countDiscountedOrder(shop: string, month: string): Promise<number> {
-  const row = await db.usage.upsert({
-    where: { shop_month: { shop, month } },
-    create: { shop, month, count: 1 },
-    update: { count: { increment: 1 } },
-  });
-  return row.count;
+  return incrementUsage(getDb(), shop, month);
 }

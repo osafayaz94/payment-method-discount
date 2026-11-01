@@ -1,16 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { env } from "cloudflare:workers";
+import type { Db } from "./store";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var prismaGlobal: PrismaClient;
+// The D1 database bound as DB in wrangler.jsonc.
+export function getDb(): Db {
+  return env.DB as unknown as Db;
 }
-
-if (process.env.NODE_ENV !== "production") {
-  if (!global.prismaGlobal) {
-    global.prismaGlobal = new PrismaClient();
-  }
-}
-
-const prisma = global.prismaGlobal ?? new PrismaClient();
-
-export default prisma;

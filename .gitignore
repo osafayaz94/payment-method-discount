@@ -9,9 +9,12 @@ node_modules
 /public/build/
 /public/_dev
 /app/public/build
-/prisma/dev.sqlite
-/prisma/dev.sqlite-journal
-database.sqlite
+
+# Cloudflare: local database and dev state, secrets for `wrangler dev`, and
+# the generated runtime types (npm run typecheck makes them)
+.wrangler/
+.dev.vars*
+worker-configuration.d.ts
 
 .env
 .env.*

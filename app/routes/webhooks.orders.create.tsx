@@ -6,16 +6,16 @@ import { discountOrder, toGraphQL } from "../settings.server";
 // second discount; this set also stops two edits running on one order at once.
 const inProgress = new Set<string>();
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  let context;
+export const action = async ({ request, context }: ActionFunctionArgs) => {
+  let webhook;
   try {
-    context = await authenticate.webhook(request);
+    webhook = await authenticate.webhook(request);
   } catch (err) {
     // A bad signature or an unknown app is answered with an error status.
     console.error(`orders/create: webhook rejected (${err instanceof Response ? err.status : err})`);
     throw err;
   }
-  const { shop, admin, payload } = context;
+  const { shop, admin, payload } = webhook;
   const orderId = payload?.admin_graphql_api_id as string | undefined;
   console.log(`${shop} orders/create received for ${orderId ?? "unknown order"}`);
 
@@ -26,9 +26,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!orderId || inProgress.has(orderId)) return new Response();
 
   // Shopify waits only 5 seconds for an answer, and editing a large order can
-  // take longer, so answer now and do the edit in the background.
+  // take longer, so answer now and do the edit in the background; waitUntil
+  // keeps the worker running until it's done.
   inProgress.add(orderId);
-  (async () => {
+  const work = (async () => {
     try {
       const { result, settings } = await discountOrder(toGraphQL(admin), shop, orderId);
       console.log(
@@ -42,6 +43,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       inProgress.delete(orderId);
     }
   })();
+  context.cloudflare.ctx.waitUntil(work);
 
   return new Response();
 };

@@ -1,3 +1,4 @@
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig, type UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -35,7 +36,25 @@ if (host === "localhost") {
   };
 }
 
-export default defineConfig({
+// `shopify app dev` passes the app's settings to this process as
+// environment variables; the worker only sees what it's given as vars, so
+// hand them over in development. Deployed workers get them from Cloudflare.
+function devVars() {
+  const vars: Record<string, string> = {};
+  for (const key of [
+    "SHOPIFY_API_KEY",
+    "SHOPIFY_API_SECRET",
+    "SHOPIFY_APP_URL",
+    "SCOPES",
+    "SHOP_CUSTOM_DOMAIN",
+  ]) {
+    const value = process.env[key];
+    if (value) vars[key] = value;
+  }
+  return vars;
+}
+
+export default defineConfig(({ command }) => ({
   server: {
     allowedHosts: [host],
     cors: {
@@ -49,6 +68,10 @@ export default defineConfig({
     },
   },
   plugins: [
+    cloudflare({
+      viteEnvironment: { name: "ssr" },
+      ...(command === "serve" ? { config: { vars: devVars() } } : {}),
+    }),
     reactRouter(),
     tsconfigPaths(),
   ],
@@ -58,4 +81,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@shopify/app-bridge-react"],
   },
-}) satisfies UserConfig;
+}) satisfies UserConfig);

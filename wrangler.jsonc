@@ -1,0 +1,27 @@
+// Cloudflare Workers settings. The app's secrets (SHOPIFY_API_SECRET, and
+// the Partner API ones for billing) are set in the Cloudflare dashboard,
+// never here. See README, Deployment.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "payment-method-discount",
+  "main": "./workers/app.ts",
+  "compatibility_date": "2026-10-01",
+  // process.env holds the vars and secrets below, as the Shopify library expects.
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // Keep variables added in the dashboard (SHOPIFY_APP_URL) on each deploy.
+  "keep_vars": true,
+  "vars": {
+    "SHOPIFY_API_KEY": "e51d1ea6a855ffacddfdaa9c8550e3e4",
+    "SCOPES": "read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations"
+  },
+  // Sessions, settings and monthly order counts. The tables are created by
+  // the app itself on first use (app/store.ts).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "payment-method-discount",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}

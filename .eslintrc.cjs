@@ -74,6 +74,13 @@ module.exports = {
         "plugin:import/recommended",
         "plugin:import/typescript",
       ],
+      rules: {
+        // Provided by the Cloudflare runtime and the React Router build.
+        "import/no-unresolved": [
+          "error",
+          { ignore: ["^cloudflare:", "^virtual:"] },
+        ],
+      },
     },
 
     // Node

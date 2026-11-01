@@ -1,10 +1,11 @@
-import db from "./db.server";
+import { getDb } from "./db.server";
+import { getSettingsRow, upsertSettings } from "./store";
 import { applyDiscount, parseGateways, type DiscountSettings, type GraphQL } from "./discount";
 import { countDiscountedOrder, getPlan, getUsage, type PlanCheck } from "./billing.server";
 import { limitReason, monthIn, type Plan } from "./plans";
 
 export async function getSettings(shop: string): Promise<DiscountSettings> {
-  const row = await db.settings.findUnique({ where: { shop } });
+  const row = await getSettingsRow(getDb(), shop);
   // A shop that never saved the form gets the schema defaults.
   const fallback = {
     enabled: true,
@@ -35,11 +36,7 @@ export async function saveSettings(shop: string, settings: DiscountSettings) {
     gateways: settings.gateways.join("\n"),
     codGateways: settings.codGateways.join("\n"),
   };
-  await db.settings.upsert({
-    where: { shop },
-    create: { shop, ...data },
-    update: data,
-  });
+  await upsertSettings(getDb(), shop, data);
 }
 
 // The storefront banner and pop-up (theme app extension), the Thank-you page
@@ -157,7 +154,7 @@ export async function discountOrder(graphql: GraphQL, shop: string, orderId: str
 // method function through a payment customization. Creates whichever is
 // missing (first save, or the merchant deleted it) and remembers their IDs.
 export async function ensureCheckoutSetup(graphql: GraphQL, shop: string) {
-  const row = await db.settings.findUnique({ where: { shop } });
+  const row = await getSettingsRow(getDb(), shop);
   const known = [row?.discountId, row?.paymentCustomizationId].filter(Boolean) as string[];
   const existing = new Set<string>();
   if (known.length) {
@@ -221,11 +218,7 @@ export async function ensureCheckoutSetup(graphql: GraphQL, shop: string) {
   }
 
   if (discountId !== row?.discountId || paymentCustomizationId !== row?.paymentCustomizationId) {
-    await db.settings.upsert({
-      where: { shop },
-      create: { shop, discountId, paymentCustomizationId },
-      update: { discountId, paymentCustomizationId },
-    });
+    await upsertSettings(getDb(), shop, { discountId, paymentCustomizationId });
   }
   return { discountId, paymentCustomizationId };
 }
@@ -247,7 +240,7 @@ export type CheckoutStatus = {
 // the store each time, so changes made in Shopify's own Discounts and
 // Payments settings show on the app's page.
 export async function getCheckoutStatus(graphql: GraphQL, shop: string): Promise<CheckoutStatus> {
-  const row = await db.settings.findUnique({ where: { shop } });
+  const row = await getSettingsRow(getDb(), shop);
   const ids = [row?.discountId, row?.paymentCustomizationId].filter(Boolean) as string[];
   if (!ids.length) return { discount: null, paymentRuleEnabled: null };
   const { nodes } = await graphql(
@@ -317,7 +310,10 @@ export function toGraphQL(admin: {
 }): GraphQL {
   return async (query, variables) => {
     const res = await admin.graphql(query, { variables });
-    const body = await res.json();
+    const body = (await res.json()) as {
+      data?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      errors?: unknown[];
+    };
     if (body.errors?.length) throw new Error(JSON.stringify(body.errors));
     return body.data;
   };

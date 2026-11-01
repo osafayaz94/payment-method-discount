@@ -98,7 +98,7 @@ Merchants open the app from **Apps** in the Shopify admin. The page has:
 | Path | What it is |
 |---|---|
 | `app/discount.ts` | Core logic: who qualifies, and the order edit. It has no framework imports, so it is easy to test. |
-| `app/settings.server.ts` | Saves and loads each shop's settings (Prisma), publishes them to metafields for the extensions as the plan allows, and runs the discount on an order within the plan |
+| `app/settings.server.ts` | Saves and loads each shop's settings, publishes them to metafields for the extensions as the plan allows, and runs the discount on an order within the plan |
 | `app/plans.ts` | What each plan allows, and the store's month |
 | `app/billing.server.ts` | Reads the plan from the Partner API, and counts discounted orders per month |
 | `app/routes/app._index.tsx` | Settings page shown in the Shopify admin |
@@ -108,10 +108,12 @@ Merchants open the app from **Apps** in the Shopify admin. The page has:
 | `extensions/payment-choice-discount/` | Discount function: the percentage off for the chosen method |
 | `extensions/payment-choice-methods/` | Payment customization function: only the chosen method at checkout |
 | `extensions/thank-you-amount/` | Thank-you page block (checkout UI extension) |
-| `prisma/schema.prisma` | `Session` (from the template), `Settings` and `Usage` (discounted orders per month) tables |
+| `app/store.ts` | The database (Cloudflare D1): `Session`, `Settings` and `Usage` (discounted orders per month) tables, created by the app on first use |
+| `workers/app.ts`, `wrangler.jsonc` | Cloudflare Workers entry point and settings |
 | `shopify.app.toml` | Scopes and webhook subscriptions |
 | `test/discount.test.ts` | Tests against a fake Admin API |
 | `test/plans.test.ts` | Plan limits and months |
+| `test/store.test.ts` | Database queries, against a local SQLite database |
 
 Access scopes: `read_orders`, `write_orders`, `write_order_edits`, `write_discounts`, `write_payment_customizations`.
 
@@ -122,7 +124,6 @@ The project is built on Shopify's [React Router app template](https://github.com
 You need Node.js 22.18 or newer and the [Shopify CLI](https://shopify.dev/docs/apps/tools/cli).
 
 ```bash
-cp .env.example .env
 npm install
 npm run dev        # links the app to your Partner/Dev Dashboard account and opens a tunnel
 npm test           # unit tests
@@ -134,23 +135,27 @@ npm run lint
 
 `npm run dev` asks you to create or pick an app the first time. It fills in `client_id` in `shopify.app.toml`.
 
+The app runs in Cloudflare's runtime even in development, with a local copy of the database in `.wrangler/`. The Shopify CLI's settings (API key, secret, app URL) are handed to it by `vite.config.ts`.
+
 To try it, open the app on a development store. Place an order with the **Bank Deposit** manual payment method and check that the order gets the discount. Then place a COD order and check that it is unchanged.
 
 The app subscribes to an order webhook and reads orders. Before installing it on a real store, request **protected customer data** access (order data) in the app's settings in the Dev Dashboard.
 
 ## Deployment
 
-1. Host the app on any Node.js host, such as Fly.io, Render, Railway or Google Cloud Run. A `Dockerfile` is included.
-2. Set these environment variables:
-   - `SHOPIFY_API_KEY`
-   - `SHOPIFY_API_SECRET`
-   - `SHOPIFY_APP_URL`
-   - `SCOPES=read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations`
-   - For billing (see Plans): `SHOPIFY_PARTNER_ORG_ID` (the number in your Partner Dashboard URL), `SHOPIFY_PARTNER_API_ACCESS_TOKEN` (a Partner API client with the **Manage apps** permission), `SHOPIFY_APP_GID` (`gid://shopify/App/<number in the app's Partner Dashboard URL>`), and `SHOPIFY_APP_HANDLE` if the app's handle isn't `payment-method-discount-12` (it is in the app's admin URL: admin.shopify.com/store/<store>/apps/<handle>)
-3. The `Dockerfile` keeps the database at `/data/app.sqlite` (`DATABASE_URL`). Mount a persistent volume at `/data`, or the shops' sessions and settings are lost on every redeploy. Without Docker, set `DATABASE_URL` yourself and run `npm run setup` once, then `npm run start`.
-4. Run `npm run deploy` to push `shopify.app.toml` (scopes and webhooks) to Shopify.
+The app runs on [Cloudflare Workers](https://developers.cloudflare.com/workers/), with its data in Cloudflare D1. The free plan is enough for most stores; the $5 Workers Paid plan lifts the free plan's 10 ms CPU limit per request if it's ever reached.
 
-SQLite is fine for a single server. For more than one instance, switch the Prisma datasource to Postgres or MySQL.
+1. In the Cloudflare dashboard, create a **D1** database named `payment-method-discount` and put its ID in `wrangler.jsonc` (`database_id`). The app creates its tables itself.
+2. Create a **Worker** from this GitHub repository (Workers & Pages, Create, Import a repository). Build command `npm run build`, deploy command `npx wrangler deploy`. Every push to `main` then deploys.
+3. In the Worker's Settings, Variables and Secrets, add:
+   - `SHOPIFY_API_SECRET` (type **Secret**): the app's client secret from the Dev Dashboard
+   - `SHOPIFY_APP_URL`: the Worker's address, such as `https://payment-method-discount.<your-subdomain>.workers.dev`
+   - For billing (see Plans), as secrets: `SHOPIFY_PARTNER_ORG_ID` (the number in your Partner Dashboard URL), `SHOPIFY_PARTNER_API_ACCESS_TOKEN` (a Partner API client with the **Manage apps** permission), `SHOPIFY_APP_GID` (`gid://shopify/App/<number in the app's Partner Dashboard URL>`), and `SHOPIFY_APP_HANDLE` if the app's handle isn't `payment-method-discount-12` (it is in the app's admin URL: admin.shopify.com/store/<store>/apps/<handle>)
+
+   `SHOPIFY_API_KEY` and `SCOPES` are set in `wrangler.jsonc`. Variables added in the dashboard are kept on each deploy (`keep_vars`).
+4. Set `application_url` and `redirect_urls` in `shopify.app.toml` to the Worker's address, then run `npm run deploy` to push the app's settings (URLs, scopes and webhooks) and extensions to Shopify.
+
+To try a production build locally: put `SHOPIFY_API_SECRET` and `SHOPIFY_APP_URL=http://localhost:8787` in `.dev.vars` (ignored by git), then `npm run preview`.
 
 To publish on the Shopify App Store, follow [App Store requirements](https://shopify.dev/docs/apps/launch/shopify-app-store/app-store-requirements). The privacy webhooks are already handled.
 
