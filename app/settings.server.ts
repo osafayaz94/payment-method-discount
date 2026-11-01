@@ -227,6 +227,76 @@ export async function ensureCheckoutSetup(graphql: GraphQL, shop: string) {
       update: { discountId, paymentCustomizationId },
     });
   }
+  return { discountId, paymentCustomizationId };
+}
+
+// Which other discounts the app's automatic discount can be used with.
+export type Combinations = {
+  productDiscounts: boolean;
+  orderDiscounts: boolean;
+  shippingDiscounts: boolean;
+};
+
+export type CheckoutStatus = {
+  // null when the app hasn't created it yet, or the merchant deleted it.
+  discount: { active: boolean; combinesWith: Combinations } | null;
+  paymentRuleEnabled: boolean | null;
+};
+
+// The state of the automatic discount and payment customization, read from
+// the store each time, so changes made in Shopify's own Discounts and
+// Payments settings show on the app's page.
+export async function getCheckoutStatus(graphql: GraphQL, shop: string): Promise<CheckoutStatus> {
+  const row = await db.settings.findUnique({ where: { shop } });
+  const ids = [row?.discountId, row?.paymentCustomizationId].filter(Boolean) as string[];
+  if (!ids.length) return { discount: null, paymentRuleEnabled: null };
+  const { nodes } = await graphql(
+    `#graphql
+    query CheckoutStatus($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on DiscountAutomaticNode {
+          id
+          automaticDiscount {
+            ... on DiscountAutomaticApp {
+              status
+              combinesWith { productDiscounts orderDiscounts shippingDiscounts }
+            }
+          }
+        }
+        ... on PaymentCustomization { id enabled }
+      }
+    }`,
+    { ids },
+  );
+  const byId = new Map<string, any>( // eslint-disable-line @typescript-eslint/no-explicit-any
+    nodes.filter(Boolean).map((node: { id: string }) => [node.id, node]),
+  );
+  const discount = row?.discountId ? byId.get(row.discountId)?.automaticDiscount : null;
+  const rule = row?.paymentCustomizationId ? byId.get(row.paymentCustomizationId) : null;
+  return {
+    discount: discount?.combinesWith
+      ? { active: discount.status === "ACTIVE", combinesWith: discount.combinesWith }
+      : null,
+    paymentRuleEnabled: rule ? Boolean(rule.enabled) : null,
+  };
+}
+
+export async function setCombinations(
+  graphql: GraphQL,
+  discountId: string,
+  combinesWith: Combinations,
+) {
+  const { discountAutomaticAppUpdate: result } = await graphql(
+    `#graphql
+    mutation SetCombinations($id: ID!, $discount: DiscountAutomaticAppInput!) {
+      discountAutomaticAppUpdate(id: $id, automaticAppDiscount: $discount) {
+        automaticAppDiscount { discountId }
+        userErrors { field message }
+      }
+    }`,
+    { id: discountId, discount: { combinesWith } },
+  );
+  assertNoUserErrors("discountAutomaticAppUpdate", result);
 }
 
 function assertNoUserErrors(
