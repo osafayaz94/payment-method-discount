@@ -612,20 +612,23 @@ function StatusRow({
   );
 }
 
-// The app's own colours, used for its custom cards; everything else is
-// standard Polaris.
+// The app's own colours (navy and gold), used for its custom cards;
+// everything else is standard Polaris.
 const BRAND = {
-  indigo: "#4f46e5",
-  violet: "#7c3aed",
-  ink: "#1e1b4b",
-  soft: "#eef2ff",
-  softer: "#f5f3ff",
-  border: "#c7d2fe",
-  track: "#e0e7ff",
+  // Banner gradient and buttons.
+  primary: "#0f172a",
+  secondary: "#334155",
+  // The meter and the "5%" circle.
+  accent: "#ca8a04",
+  ink: "#0f172a",
+  soft: "#f8fafc",
+  softer: "#fefce8",
+  border: "#e2e8f0",
+  track: "#f1f5f9",
   coral: "#e5484d",
   coralSoft: "#fff1f2",
   coralBorder: "#fecdd3",
-  amber: "#f59e0b",
+  amber: "#ea580c",
   green: "#22c55e",
   muted: "#9ca3af",
 };
@@ -643,7 +646,7 @@ function Hero({
   return (
     <div
       style={{
-        background: `linear-gradient(120deg, ${BRAND.indigo} 0%, ${BRAND.violet} 100%)`,
+        background: `linear-gradient(120deg, ${BRAND.primary} 0%, ${BRAND.secondary} 100%)`,
         color: "#fff",
         borderRadius: 16,
         padding: 20,
@@ -660,7 +663,7 @@ function Hero({
           height: 64,
           borderRadius: "50%",
           background: "#fff",
-          color: BRAND.indigo,
+          color: BRAND.accent,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -811,7 +814,7 @@ function UsageCard({
 
   const next = plan.key === "free" ? "Pro" : "Advanced";
   const near = !paused && used >= plan.limit * 0.8;
-  const color = paused ? BRAND.coral : near ? BRAND.amber : BRAND.indigo;
+  const color = paused ? BRAND.coral : near ? BRAND.amber : BRAND.accent;
   const message = paused
     ? `All ${plan.limit} used. Customers pay full price until ${nextMonth}.`
     : near
@@ -875,7 +878,7 @@ function CheckoutPreview({
   const mockButton = (label: string) => (
     <div
       style={{
-        background: BRAND.indigo,
+        background: BRAND.primary,
         color: "#fff",
         borderRadius: 999,
         padding: "10px 12px",
