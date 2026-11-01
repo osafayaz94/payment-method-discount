@@ -265,12 +265,12 @@ export default function Index() {
   const setupMissing =
     !checkout.discount || checkout.paymentRuleEnabled === null;
   const status = !settings.enabled
-    ? { tone: "neutral" as const, text: "Off" }
+    ? { color: BRAND.muted, text: "Off" }
     : paused
-      ? { tone: "critical" as const, text: "Limit reached" }
+      ? { color: BRAND.coral, text: "Paused: limit reached" }
       : setupMissing || !checkout.discount?.active
-        ? { tone: "warning" as const, text: "Needs setup" }
-        : { tone: "success" as const, text: "Active" };
+        ? { color: BRAND.amber, text: "Needs setup" }
+        : { color: BRAND.green, text: "Active" };
   const combinesWith = checkout.discount?.combinesWith ?? DEFAULT_COMBINATIONS;
   // Every name the merchant might pick: the ones in the settings and the
   // ones seen on recent orders.
@@ -285,34 +285,11 @@ export default function Index() {
 
   return (
     <s-page heading="Payment method discount">
-      <s-section>
-        <s-stack
-          direction="inline"
-          justifyContent="space-between"
-          alignItems="center"
-          gap="base"
-        >
-          <s-stack direction="block" gap="small-200">
-            <s-text color="subdued">Discount to apply</s-text>
-            <s-stack direction="inline" alignItems="center" gap="small-200">
-              <span
-                style={{ fontSize: "1.6rem", fontWeight: 650, lineHeight: 1 }}
-              >
-                {settings.percent}%
-              </span>
-              <s-text color="subdued">·</s-text>
-              <s-text type="strong">
-                {settings.gateways.join(", ")}
-                {cardOn ? " and cards" : ""}
-              </s-text>
-            </s-stack>
-          </s-stack>
-          <s-stack direction="inline" alignItems="center" gap="small-200">
-            <s-text color="subdued">Status</s-text>
-            <s-badge tone={status.tone}>{status.text}</s-badge>
-          </s-stack>
-        </s-stack>
-      </s-section>
+      <Hero
+        percent={settings.percent}
+        methods={`${settings.gateways.join(", ")}${cardOn ? " and cards" : ""}`}
+        status={status}
+      />
 
       <UsageCard
         plan={plan}
@@ -492,7 +469,7 @@ export default function Index() {
         )}
       </s-section>
 
-      <s-section slot="aside" heading="Store status">
+      <s-section slot="aside" heading="Setup checklist">
         <s-stack direction="block" gap="base">
           <StatusRow
             ok={settings.enabled}
@@ -635,6 +612,158 @@ function StatusRow({
   );
 }
 
+// The app's own colours, used for its custom cards; everything else is
+// standard Polaris.
+const BRAND = {
+  indigo: "#4f46e5",
+  violet: "#7c3aed",
+  ink: "#1e1b4b",
+  soft: "#eef2ff",
+  softer: "#f5f3ff",
+  border: "#c7d2fe",
+  track: "#e0e7ff",
+  coral: "#e5484d",
+  coralSoft: "#fff1f2",
+  coralBorder: "#fecdd3",
+  amber: "#f59e0b",
+  green: "#22c55e",
+  muted: "#9ca3af",
+};
+
+// Top card: the discount on offer and whether it's running.
+function Hero({
+  percent,
+  methods,
+  status,
+}: {
+  percent: number;
+  methods: string;
+  status: { color: string; text: string };
+}) {
+  return (
+    <div
+      style={{
+        background: `linear-gradient(120deg, ${BRAND.indigo} 0%, ${BRAND.violet} 100%)`,
+        color: "#fff",
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 16,
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        flexWrap: "wrap",
+      }}
+    >
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: "50%",
+          background: "#fff",
+          color: BRAND.indigo,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "1.3rem",
+          fontWeight: 700,
+          flexShrink: 0,
+        }}
+      >
+        {percent}%
+      </div>
+      <div style={{ flex: "1 1 220px" }}>
+        <div style={{ fontSize: "1.1rem", fontWeight: 650 }}>
+          {percent}% off for paying by {methods}
+        </div>
+        <div style={{ opacity: 0.85, marginTop: 4, fontSize: 14 }}>
+          Customers pick how they pay before checkout, and see the saving
+          straight away.
+        </div>
+      </div>
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          background: "#fff",
+          color: BRAND.ink,
+          borderRadius: 999,
+          padding: "6px 12px",
+          fontWeight: 600,
+          fontSize: "0.9rem",
+        }}
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: status.color,
+          }}
+        />
+        {status.text}
+      </div>
+    </div>
+  );
+}
+
+// Round meter for the month's discounted orders.
+function Ring({
+  value,
+  max,
+  color,
+}: {
+  value: number;
+  max: number;
+  color: string;
+}) {
+  const radius = 30;
+  const length = 2 * Math.PI * radius;
+  const share = Math.min(1, value / max);
+  return (
+    <svg
+      width="76"
+      height="76"
+      viewBox="0 0 76 76"
+      role="img"
+      aria-label={`${value} of ${max} discounted orders used`}
+      style={{ flexShrink: 0 }}
+    >
+      <circle
+        cx="38"
+        cy="38"
+        r={radius}
+        fill="none"
+        stroke={BRAND.track}
+        strokeWidth="8"
+      />
+      {share > 0 && (
+        <circle
+          cx="38"
+          cy="38"
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={`${length * share} ${length}`}
+          transform="rotate(-90 38 38)"
+        />
+      )}
+      <text
+        x="38"
+        y="43"
+        textAnchor="middle"
+        fontSize="15"
+        fontWeight="700"
+        fill={BRAND.ink}
+      >
+        {value}/{max}
+      </text>
+    </svg>
+  );
+}
+
 // The monthly allowance, with an upgrade offer on the Free and Pro plans.
 function UsageCard({
   plan,
@@ -681,83 +810,49 @@ function UsageCard({
   }
 
   const next = plan.key === "free" ? "Pro" : "Advanced";
-  const share = Math.min(1, used / plan.limit);
+  const near = !paused && used >= plan.limit * 0.8;
+  const color = paused ? BRAND.coral : near ? BRAND.amber : BRAND.indigo;
   const message = paused
-    ? `You've used all ${plan.limit} discounted orders this month. Customers pay full price until ${nextMonth}; upgrade to turn the discount back on now.`
-    : used >= plan.limit * 0.8
-      ? `Almost there: the discount pauses after ${plan.limit} orders, until ${nextMonth}.`
-      : `The ${plan.name} plan includes ${plan.limit} discounted orders a month.`;
+    ? `All ${plan.limit} used. Customers pay full price until ${nextMonth}.`
+    : near
+      ? `Nearly used up. The discount pauses at ${plan.limit}, until ${nextMonth}.`
+      : `${plan.limit - used} left this month. Counts start again on ${nextMonth}.`;
 
   return (
     <div
       style={{
-        background: "#16362d",
-        color: "#fff",
-        borderRadius: 12,
-        padding: "20px 20px 18px",
+        background: paused
+          ? BRAND.coralSoft
+          : `linear-gradient(135deg, ${BRAND.soft} 0%, ${BRAND.softer} 100%)`,
+        border: `1px solid ${paused ? BRAND.coralBorder : BRAND.border}`,
+        borderRadius: 16,
+        padding: 20,
         marginBottom: 16,
+        display: "flex",
+        alignItems: "center",
+        gap: 20,
+        flexWrap: "wrap",
+        color: BRAND.ink,
+        fontSize: 14,
       }}
     >
-      <div style={{ fontSize: "1.25rem", fontWeight: 650 }}>
-        Upgrade to {next}
+      <Ring value={used} max={plan.limit} color={color} />
+      <div style={{ flex: "1 1 240px" }}>
+        <div style={{ fontWeight: 650 }}>
+          This month on the {plan.name} plan
+        </div>
+        <div style={{ marginTop: 4, color: paused ? BRAND.coral : undefined }}>
+          {message}
+        </div>
+        <div style={{ marginTop: 4, opacity: 0.75, fontSize: 13 }}>
+          {next === "Pro"
+            ? "Pro: 30 discounted orders a month, card discounts, your own wording and colours."
+            : "Advanced: no monthly limit."}
+        </div>
       </div>
-      <div style={{ marginTop: 6, opacity: 0.85 }}>
-        {next === "Pro"
-          ? "30 discounted orders a month, card discounts, and your own wording and colours."
-          : "Unlimited discounted orders every month."}
-      </div>
-      <div
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.2)",
-          margin: "16px 0 12px",
-        }}
-      />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: "0.95rem",
-        }}
-      >
-        <span>Discounted orders this month</span>
-        <span style={{ fontWeight: 650 }}>
-          {used} / {plan.limit}
-        </span>
-      </div>
-      <div
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={plan.limit}
-        aria-valuenow={used}
-        style={{
-          height: 6,
-          borderRadius: 3,
-          background: "rgba(255,255,255,0.2)",
-          margin: "8px 0 12px",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            width: `${share * 100}%`,
-            height: "100%",
-            background: paused ? "#f4a08c" : "#8fd9b6",
-          }}
-        />
-      </div>
-      <div
-        style={{
-          color: paused ? "#ffc2b3" : "rgba(255,255,255,0.85)",
-          fontSize: "0.95rem",
-        }}
-      >
-        {message}
-      </div>
-      <div style={{ marginTop: 14 }}>
-        <s-button href={plansUrl} target="_top">
-          Upgrade to {next}
-        </s-button>
-      </div>
+      <s-button variant="primary" href={plansUrl} target="_top">
+        {`Get ${next}`}
+      </s-button>
     </div>
   );
 }
@@ -780,9 +875,9 @@ function CheckoutPreview({
   const mockButton = (label: string) => (
     <div
       style={{
-        background: "#1a1a1a",
+        background: BRAND.indigo,
         color: "#fff",
-        borderRadius: 8,
+        borderRadius: 999,
         padding: "10px 12px",
         textAlign: "center",
         fontWeight: 600,
