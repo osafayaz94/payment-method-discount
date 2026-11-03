@@ -121,6 +121,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     // Used to build theme editor links that add the storefront banner.
     apiKey: process.env.SHOPIFY_API_KEY || "",
+    shop: session.shop,
     settings,
     plan: state.plan,
     used: state.used,
@@ -238,6 +239,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function Index() {
   const {
     apiKey,
+    shop,
     settings,
     plan,
     used,
@@ -301,6 +303,7 @@ export default function Index() {
 
       <SetupGuide
         apiKey={apiKey}
+        shop={shop}
         discountReady={
           settings.enabled &&
           Boolean(checkout.discount?.active) &&
@@ -586,10 +589,12 @@ type Activations = {
 // which reports what's switched on in the live theme and checkout).
 function SetupGuide({
   apiKey,
+  shop,
   discountReady,
   tested,
 }: {
   apiKey: string;
+  shop: string;
   discountReady: boolean;
   tested: boolean;
 }) {
@@ -661,7 +666,8 @@ function SetupGuide({
       done: tested,
       action: {
         label: "Open your store",
-        href: "shopify://admin/online_store/preview",
+        href: `https://${shop}`,
+        newTab: true,
       },
     },
     {
@@ -779,7 +785,10 @@ function SetupGuide({
                     )}
                     {!step.done && step.action && (
                       <s-stack direction="inline" gap="small-200">
-                        <s-button href={step.action.href} target="_top">
+                        <s-button
+                          href={step.action.href}
+                          target={"newTab" in step.action ? "_blank" : "_top"}
+                        >
                           {step.action.label}
                         </s-button>
                         {step.second && (
