@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -260,8 +260,15 @@ export default function Index() {
     }
   }, [result, shopify]);
 
+  // The preview follows the form as the merchant types, before saving.
+  const [percent, setPercent] = useState(settings.percent);
+  const [cardOn, setCardOn] = useState(
+    settings.cardDiscount && plan.cardDiscount,
+  );
+  const [showMore, setShowMore] = useState(
+    Boolean(errors?.label || errors?.cardLabel),
+  );
   const method = settings.gateways[0] ?? "Bank Deposit";
-  const cardOn = settings.cardDiscount && plan.cardDiscount;
   const setupMissing =
     !checkout.discount || checkout.paymentRuleEnabled === null;
   const status = !settings.enabled
@@ -282,13 +289,24 @@ export default function Index() {
     ]),
   ];
   const checkoutText = `Get ${settings.percent}% off when you pay by ${method}. The discount is applied automatically after you place your order, and we'll email you the final amount to pay.`;
+  const shownPercent = percent > 0 ? percent : settings.percent;
 
   return (
     <s-page heading="Payment method discount">
       <Hero
         percent={settings.percent}
-        methods={`${settings.gateways.join(", ")}${cardOn ? " and cards" : ""}`}
+        methods={`${settings.gateways.join(", ")}${settings.cardDiscount && plan.cardDiscount ? " and cards" : ""}`}
         status={status}
+      />
+
+      <SetupGuide
+        apiKey={apiKey}
+        discountReady={
+          settings.enabled &&
+          Boolean(checkout.discount?.active) &&
+          Boolean(checkout.paymentRuleEnabled)
+        }
+        tested={used > 0 || applied.length > 0}
       />
 
       <UsageCard
@@ -299,87 +317,57 @@ export default function Index() {
         plansUrl={plansUrl}
       />
 
-      <Form method="post" data-save-bar>
+      <Form method="post" data-save-bar style={{ marginBottom: 16 }}>
         <s-stack direction="block" gap="base">
-          <s-section heading="Discount settings">
+          <s-section heading="Your discount">
             <s-stack direction="block" gap="base">
               <s-switch
                 name="enabled"
                 label="Give the discount"
+                details="Turn off to stop all discounts straight away. Customers then pay full price with every method."
                 defaultChecked={settings.enabled}
               />
-              <s-grid gridTemplateColumns="1fr 2fr" gap="base">
+              <s-grid
+                gridTemplateColumns="1fr 2fr"
+                gap="base"
+                alignItems="start"
+              >
                 <s-number-field
                   name="percent"
-                  label="Discount value"
+                  label="Discount"
                   suffix="%"
                   min={0.01}
                   max={100}
                   step={0.5}
                   defaultValue={String(settings.percent)}
                   error={errors?.percent}
+                  onInput={(event) =>
+                    setPercent(Number(event.currentTarget.value))
+                  }
                 />
-                <s-text-field
-                  name="label"
-                  label="Discount label"
-                  defaultValue={settings.label}
-                  details="Shown to the customer at checkout, on the order and in the email"
-                  error={errors?.label}
-                />
+                <s-stack direction="block" gap="small-200">
+                  <s-text type="strong">Who gets it</s-text>
+                  <s-text>✓ Customers who pay by bank transfer</s-text>
+                  <s-checkbox
+                    name="cardDiscount"
+                    label="Customers who pay by credit or debit card"
+                    details={
+                      plan.cardDiscount
+                        ? "The card is charged the lower amount."
+                        : "Available on the Pro and Advanced plans."
+                    }
+                    defaultChecked={settings.cardDiscount && plan.cardDiscount}
+                    disabled={!plan.cardDiscount}
+                    onChange={(event) => setCardOn(event.currentTarget.checked)}
+                  />
+                  <s-text color="subdued">
+                    Cash on delivery always pays full price.
+                  </s-text>
+                </s-stack>
               </s-grid>
-              <s-checkbox
-                name="notifyCustomer"
-                label="Email the customer the new total when an order is discounted after it's placed"
-                defaultChecked={settings.notifyCustomer}
-              />
-            </s-stack>
-          </s-section>
-
-          <s-section heading="Payment methods">
-            <s-stack direction="block" gap="base">
-              <s-choice-list
-                name="gateways"
-                label="Payment methods that get the discount"
-                details="Names as they appear at checkout and on orders. Customers who pick bank transfer in the pop-up only see these."
-                multiple
-                error={errors?.gateways}
-              >
-                {methodChoices.map((name) => (
-                  <s-choice
-                    key={name}
-                    value={name}
-                    defaultSelected={settings.gateways.includes(name)}
-                  >
-                    {name}
-                  </s-choice>
-                ))}
-              </s-choice-list>
-              <s-text-field
-                name="otherGateways"
-                label="Another discounted method"
-                placeholder="For example JazzCash"
-                details="For a method not listed above yet. Separate several with commas."
-              />
-              <s-choice-list
-                name="codGateways"
-                label="Cash on delivery methods (full price)"
-                details="Customers who pick cash on delivery in the pop-up only see these. Every other method counts as card."
-                multiple
-                error={errors?.codGateways}
-              >
-                {methodChoices.map((name) => (
-                  <s-choice
-                    key={name}
-                    value={name}
-                    defaultSelected={settings.codGateways.includes(name)}
-                  >
-                    {name}
-                  </s-choice>
-                ))}
-              </s-choice-list>
               <s-divider />
               <CheckoutPreview
-                percent={settings.percent}
+                percent={shownPercent}
                 method={method}
                 cardOn={cardOn}
                 codName={settings.codGateways[0] ?? "Cash on Delivery"}
@@ -387,51 +375,124 @@ export default function Index() {
             </s-stack>
           </s-section>
 
-          <s-section heading="Card payments">
+          <s-section heading="Payment methods">
             <s-stack direction="block" gap="base">
-              <s-checkbox
-                name="cardDiscount"
-                label="Credit and debit cards also get the discount"
-                details={
-                  plan.cardDiscount
-                    ? "When the customer picks card in the pop-up before checkout; the card is then charged the lower amount."
-                    : "Available on the Pro and Advanced plans."
-                }
-                defaultChecked={cardOn}
-                disabled={!plan.cardDiscount}
-              />
+              <s-paragraph color="subdued">
+                Tick your store&apos;s payment methods as they&apos;re named at
+                checkout. Any method not ticked here counts as card.
+              </s-paragraph>
+              <s-grid
+                gridTemplateColumns="1fr 1fr"
+                gap="base"
+                alignItems="start"
+              >
+                <s-choice-list
+                  name="gateways"
+                  label="Bank transfer (discounted)"
+                  multiple
+                  error={errors?.gateways}
+                >
+                  {methodChoices.map((name) => (
+                    <s-choice
+                      key={name}
+                      value={name}
+                      defaultSelected={settings.gateways.includes(name)}
+                    >
+                      {name}
+                    </s-choice>
+                  ))}
+                </s-choice-list>
+                <s-choice-list
+                  name="codGateways"
+                  label="Cash on delivery (full price)"
+                  multiple
+                  error={errors?.codGateways}
+                >
+                  {methodChoices.map((name) => (
+                    <s-choice
+                      key={name}
+                      value={name}
+                      defaultSelected={settings.codGateways.includes(name)}
+                    >
+                      {name}
+                    </s-choice>
+                  ))}
+                </s-choice-list>
+              </s-grid>
               <s-text-field
-                name="cardLabel"
-                label="Card discount label"
-                defaultValue={settings.cardLabel}
-                error={errors?.cardLabel}
+                name="otherGateways"
+                label="Bank method not listed?"
+                placeholder="For example JazzCash"
+                details="Type its name as shown at checkout. Separate several with commas."
               />
             </s-stack>
           </s-section>
 
-          <s-section heading="Combinations">
+          <s-section>
             <s-stack direction="block" gap="base">
-              <s-paragraph>
-                Choose which other discounts can apply alongside this one.
-              </s-paragraph>
-              <s-checkbox
-                name="combineProduct"
-                label="Product discounts"
-                details="Sale prices and product discounts still apply; this discount is taken off what's left."
-                defaultChecked={combinesWith.productDiscounts}
-              />
-              <s-checkbox
-                name="combineOrder"
-                label="Order discounts"
-                details="Other order discounts that also allow combining apply alongside this one."
-                defaultChecked={combinesWith.orderDiscounts}
-              />
-              <s-checkbox
-                name="combineShipping"
-                label="Shipping discounts"
-                details="Free or reduced shipping still applies."
-                defaultChecked={combinesWith.shippingDiscounts}
-              />
+              <s-stack
+                direction="inline"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <s-stack direction="block" gap="none">
+                  <s-heading>More options</s-heading>
+                  <s-text color="subdued">
+                    Discount names, customer emails and combining with other
+                    discounts
+                  </s-text>
+                </s-stack>
+                <s-button
+                  variant="tertiary"
+                  icon={showMore ? "chevron-up" : "chevron-down"}
+                  onClick={() => setShowMore(!showMore)}
+                >
+                  {showMore ? "Hide" : "Show"}
+                </s-button>
+              </s-stack>
+              {/* Hidden rather than removed, so the fields are still saved. */}
+              <div style={{ display: showMore ? "block" : "none" }}>
+                <s-stack direction="block" gap="base">
+                  <s-grid gridTemplateColumns="1fr 1fr" gap="base">
+                    <s-text-field
+                      name="label"
+                      label="Name for the bank transfer discount"
+                      defaultValue={settings.label}
+                      details="Shown at checkout, on the order and in emails"
+                      error={errors?.label}
+                    />
+                    <s-text-field
+                      name="cardLabel"
+                      label="Name for the card discount"
+                      defaultValue={settings.cardLabel}
+                      error={errors?.cardLabel}
+                    />
+                  </s-grid>
+                  <s-checkbox
+                    name="notifyCustomer"
+                    label="Email the customer the new total when an order is discounted after it's placed"
+                    defaultChecked={settings.notifyCustomer}
+                  />
+                  <s-divider />
+                  <s-text type="strong">Can be used together with</s-text>
+                  <s-checkbox
+                    name="combineProduct"
+                    label="Product discounts and sale prices"
+                    defaultChecked={combinesWith.productDiscounts}
+                  />
+                  <s-checkbox
+                    name="combineOrder"
+                    label="Other order discounts"
+                    details="Only those that also allow combining."
+                    defaultChecked={combinesWith.orderDiscounts}
+                  />
+                  <s-checkbox
+                    name="combineShipping"
+                    label="Free or reduced shipping"
+                    defaultChecked={combinesWith.shippingDiscounts}
+                  />
+                </s-stack>
+              </div>
               <s-stack direction="inline" gap="base">
                 <s-button
                   type="submit"
@@ -446,169 +507,361 @@ export default function Index() {
         </s-stack>
       </Form>
 
-      <ApplyToOrder />
-
       {failed.length > 0 && (
         <s-section heading="Needs attention">
           <s-paragraph>
-            These orders qualified, but the discount could not be applied. The
-            orders were not changed. Retry, or edit the order by hand.
+            These orders qualified, but the discount couldn&apos;t be applied.
+            They weren&apos;t changed. Click Retry, or edit the order by hand.
           </s-paragraph>
           <OrderTable orders={failed} retry />
         </s-section>
       )}
 
-      <s-section heading="Recently discounted orders">
-        {applied.length ? (
-          <OrderTable orders={applied} />
-        ) : (
-          <s-paragraph>
-            No orders yet. Orders paid with {settings.gateways.join(" or ")}
-            {cardOn ? " or card" : ""} will show up here.
-          </s-paragraph>
-        )}
-      </s-section>
-
-      <s-section slot="aside" heading="Setup checklist">
+      <s-section heading="Discounted orders">
         <s-stack direction="block" gap="base">
-          <StatusRow
-            ok={settings.enabled}
-            title={settings.enabled ? "Discount on" : "Discount off"}
-            detail={
-              settings.enabled
-                ? settings.gateways.join(", ")
-                : "Turn it on under Discount settings"
-            }
-          />
-          <StatusRow
-            ok={Boolean(checkout.discount?.active)}
-            title="Checkout discount"
-            detail={
-              checkout.discount
-                ? checkout.discount.active
-                  ? "Active in Discounts"
-                  : "Not active: check it in Discounts"
-                : "Click Save to set it up"
-            }
-          />
-          <StatusRow
-            ok={Boolean(checkout.paymentRuleEnabled)}
-            title="Payment method rule"
-            detail={
-              checkout.paymentRuleEnabled === null
-                ? "Click Save to set it up"
-                : checkout.paymentRuleEnabled
-                  ? "Checkout only offers the chosen method"
-                  : "Turned off in Settings, Payments"
-            }
-          />
-          <StatusRow
-            ok={!paused}
-            title="Monthly allowance"
-            detail={
-              plan.limit === null
-                ? `${used} discounted orders this month`
-                : paused
-                  ? `Used up, back on ${nextMonth}`
-                  : `${used} of ${plan.limit} used`
-            }
-          />
+          {applied.length ? (
+            <OrderTable orders={applied} />
+          ) : (
+            <s-paragraph>
+              None yet. Orders paid by {settings.gateways.join(" or ")}
+              {settings.cardDiscount && plan.cardDiscount
+                ? " or card"
+                : ""}{" "}
+              show up here.
+            </s-paragraph>
+          )}
+          <s-divider />
+          <ApplyToOrder />
         </s-stack>
       </s-section>
 
-      <s-section slot="aside" heading="Payment choice pop-up">
-        <s-stack direction="block" gap="base">
-          <s-paragraph>
-            Asks &quot;How would you like to pay?&quot; when a customer clicks
-            Check out or Buy it now, so the discount shows in checkout before
-            they pay. Turn it on under App embeds and click Save there.
-            {plan.customize
-              ? " The wording can be changed there too."
-              : " Your own wording and colours need the Pro or Advanced plan."}
-          </s-paragraph>
-          <s-stack direction="inline" gap="base">
-            <s-button
-              icon="theme-edit"
-              href={`shopify://admin/themes/current/editor?context=apps&activateAppId=${apiKey}/payment-choice`}
-              target="_top"
-            >
-              Edit in theme
-            </s-button>
-          </s-stack>
-        </s-stack>
-      </s-section>
-
-      <s-section slot="aside" heading="Savings banner">
-        <s-stack direction="block" gap="base">
-          <s-paragraph>
-            &quot;Pay by {method} at checkout and save {settings.percent}
-            %&quot;, with the amount worked out from the cart or product price.
-          </s-paragraph>
-          <s-stack direction="inline" gap="small-200">
-            <s-button
-              href={`shopify://admin/themes/current/editor?template=cart&addAppBlockId=${apiKey}/savings-banner&target=newAppsSection`}
-              target="_top"
-            >
-              Add to cart page
-            </s-button>
-            <s-button
-              href={`shopify://admin/themes/current/editor?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`}
-              target="_top"
-            >
-              Add to product pages
-            </s-button>
-          </s-stack>
-          <s-paragraph>
-            Thank-you page: in Settings, Checkout, click Customize, switch to
-            the Thank you page and add the &quot;Payment discount amount&quot;
-            block.
-          </s-paragraph>
-          <s-stack direction="inline" gap="base">
-            <s-button href="shopify://admin/settings/checkout" target="_top">
-              Open checkout settings
-            </s-button>
-          </s-stack>
-        </s-stack>
-      </s-section>
+      <HelpCard percent={settings.percent} method={method} />
 
       <s-section slot="aside" heading="Tell customers at checkout">
-        <s-paragraph>
-          In Settings, then Payments, open your manual payment method and paste
-          this into Additional details:
-        </s-paragraph>
-        <s-box
-          padding="base"
-          borderWidth="base"
-          borderRadius="base"
-          background="subdued"
-        >
-          <s-text>{checkoutText}</s-text>
-        </s-box>
+        <s-stack direction="block" gap="base">
+          <s-paragraph>
+            Optional: in Settings, Payments, open your bank transfer method and
+            paste this into Additional details.
+          </s-paragraph>
+          <s-box
+            padding="base"
+            borderWidth="base"
+            borderRadius="base"
+            background="subdued"
+          >
+            <s-text>{checkoutText}</s-text>
+          </s-box>
+          <s-stack direction="inline" gap="base">
+            <s-button
+              onClick={() =>
+                navigator.clipboard
+                  ?.writeText(checkoutText)
+                  .then(() => shopify.toast.show("Copied"))
+              }
+            >
+              Copy text
+            </s-button>
+            <s-button
+              href="shopify://admin/settings/payments"
+              target="_top"
+              variant="tertiary"
+            >
+              Open payment settings
+            </s-button>
+          </s-stack>
+        </s-stack>
       </s-section>
     </s-page>
   );
 }
 
-function StatusRow({
-  ok,
-  title,
-  detail,
+type Activations = {
+  popUp: boolean;
+  banner: boolean;
+  thankYou: boolean;
+} | null;
+
+// Step-by-step setup, ticked off by itself: the discount from the server,
+// the theme and checkout blocks from Shopify (App Bridge's app.extensions(),
+// which reports what's switched on in the live theme and checkout).
+function SetupGuide({
+  apiKey,
+  discountReady,
+  tested,
 }: {
-  ok: boolean;
-  title: string;
-  detail: string;
+  apiKey: string;
+  discountReady: boolean;
+  tested: boolean;
 }) {
+  const shopify = useAppBridge();
+  const [active, setActive] = useState<Activations>(null);
+  const [open, setOpen] = useState(true);
+
+  const check = useCallback(() => {
+    shopify.app.extensions().then(
+      (extensions) => {
+        const blocks = extensions.flatMap((extension) =>
+          extension.type === "theme_app_extension"
+            ? (extension.activations as { handle: string; status: string }[])
+            : [],
+        );
+        const isOn = (handle: string) =>
+          blocks.some(
+            (block) => block.handle === handle && block.status === "active",
+          );
+        const thankYou = extensions.some(
+          (extension) =>
+            extension.handle === "thank-you-amount" &&
+            extension.activations.length > 0,
+        );
+        setActive({
+          popUp: isOn("payment-choice"),
+          banner: isOn("savings-banner"),
+          thankYou,
+        });
+      },
+      () => setActive(null),
+    );
+  }, [shopify]);
+
+  // Check on load, and again when the merchant comes back from the theme
+  // editor in another tab.
+  useEffect(() => {
+    check();
+    const again = () => document.visibilityState === "visible" && check();
+    document.addEventListener("visibilitychange", again);
+    window.addEventListener("focus", again);
+    return () => {
+      document.removeEventListener("visibilitychange", again);
+      window.removeEventListener("focus", again);
+    };
+  }, [check]);
+
+  const steps = [
+    {
+      title: "Set up the discount",
+      detail:
+        "Choose the percentage and your bank transfer methods below, then click Save.",
+      done: discountReady,
+    },
+    {
+      title: "Turn on the payment pop-up",
+      detail:
+        "Asks customers how they'll pay when they click Check out or Buy it now, so the discount shows at checkout. Click the button, then Save in the theme editor.",
+      done: active?.popUp,
+      action: {
+        label: "Turn on pop-up",
+        href: `shopify://admin/themes/current/editor?context=apps&activateAppId=${apiKey}/payment-choice`,
+      },
+    },
+    {
+      title: "Place a test order",
+      detail:
+        "Buy something in your store and pick bank transfer in the pop-up. It shows under Discounted orders.",
+      done: tested,
+      action: {
+        label: "Open your store",
+        href: "shopify://admin/online_store/preview",
+      },
+    },
+    {
+      title: "Show the saving on cart and product pages",
+      optional: true,
+      detail:
+        'A banner such as "Pay by bank transfer and save 5%". Add it, then click Save in the theme editor.',
+      done: active?.banner,
+      action: {
+        label: "Add to cart page",
+        href: `shopify://admin/themes/current/editor?template=cart&addAppBlockId=${apiKey}/savings-banner&target=newAppsSection`,
+      },
+      second: {
+        label: "Add to product pages",
+        href: `shopify://admin/themes/current/editor?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`,
+      },
+    },
+    {
+      title: "Show the amount to pay after ordering",
+      optional: true,
+      detail:
+        'A Thank-you page block for bank transfer orders. In the checkout editor, switch to the Thank you page and add "Payment discount amount".',
+      done: active?.thankYou,
+      action: {
+        label: "Open checkout editor",
+        href: "shopify://admin/settings/checkout/editor",
+      },
+    },
+  ];
+  const required = steps.filter((step) => !step.optional);
+  const doneCount = required.filter((step) => step.done).length;
+  const allDone = doneCount === required.length;
+
   return (
-    <s-stack direction="inline" gap="small-200" alignItems="start">
-      <s-icon
-        type={ok ? "check-circle-filled" : "alert-circle"}
-        tone={ok ? "success" : "warning"}
-      />
-      <s-stack direction="block" gap="none">
-        <s-text type="strong">{title}</s-text>
-        <s-text color="subdued">{detail}</s-text>
+    <s-section>
+      <s-stack direction="block" gap="base">
+        <s-stack
+          direction="inline"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <s-stack direction="block" gap="none">
+            <s-heading>{allDone ? "You're all set" : "Get started"}</s-heading>
+            <s-text color="subdued">
+              {doneCount} of {required.length} steps done
+              {allDone ? ". The extras below are optional." : ""}
+            </s-text>
+          </s-stack>
+          <s-stack direction="inline" gap="small-200">
+            <s-button
+              variant="tertiary"
+              icon="refresh"
+              onClick={check}
+              accessibilityLabel="Check again"
+            />
+            <s-button
+              variant="tertiary"
+              icon={open ? "chevron-up" : "chevron-down"}
+              onClick={() => setOpen(!open)}
+              accessibilityLabel={open ? "Hide steps" : "Show steps"}
+            />
+          </s-stack>
+        </s-stack>
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={required.length}
+          aria-valuenow={doneCount}
+          style={{
+            height: 6,
+            borderRadius: 3,
+            background: BRAND.track,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${(doneCount / required.length) * 100}%`,
+              height: "100%",
+              background: BRAND.accent,
+              transition: "width 0.3s",
+            }}
+          />
+        </div>
+        {open &&
+          steps.map((step, index) => (
+            <s-box
+              key={step.title}
+              padding="base"
+              borderWidth="base"
+              borderRadius="base"
+              background={step.done ? "subdued" : "base"}
+            >
+              <div
+                style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
+              >
+                <StepMark done={Boolean(step.done)} number={index + 1} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <s-stack direction="block" gap="small-200">
+                    <s-stack
+                      direction="inline"
+                      gap="small-200"
+                      alignItems="center"
+                    >
+                      <s-text type="strong">{step.title}</s-text>
+                      {step.optional && <s-badge>Optional</s-badge>}
+                      {step.done === undefined &&
+                        step.action &&
+                        active === null && (
+                          <s-badge tone="neutral">Couldn&apos;t check</s-badge>
+                        )}
+                    </s-stack>
+                    {!step.done && (
+                      <s-text color="subdued">{step.detail}</s-text>
+                    )}
+                    {!step.done && step.action && (
+                      <s-stack direction="inline" gap="small-200">
+                        <s-button href={step.action.href} target="_top">
+                          {step.action.label}
+                        </s-button>
+                        {step.second && (
+                          <s-button
+                            href={step.second.href}
+                            target="_top"
+                            variant="tertiary"
+                          >
+                            {step.second.label}
+                          </s-button>
+                        )}
+                      </s-stack>
+                    )}
+                  </s-stack>
+                </div>
+              </div>
+            </s-box>
+          ))}
       </s-stack>
-    </s-stack>
+    </s-section>
+  );
+}
+
+function StepMark({ done, number }: { done: boolean; number: number }) {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: "50%",
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 12,
+        fontWeight: 700,
+        background: done ? BRAND.green : "transparent",
+        border: done ? "none" : `2px dashed ${BRAND.muted}`,
+        color: done ? "#fff" : BRAND.ink,
+      }}
+    >
+      {done ? "✓" : number}
+    </div>
+  );
+}
+
+// Short answers to what merchants usually ask.
+function HelpCard({ percent, method }: { percent: number; method: string }) {
+  const questions = [
+    {
+      q: "Why don't I see the discount at checkout?",
+      a: "The customer has to pick bank transfer (or card, if turned on) in the pop-up before checkout. Check that the pop-up is turned on in Get started.",
+    },
+    {
+      q: "Can customers still choose cash on delivery?",
+      a: "Yes, at full price. Checkout then only offers cash on delivery, so a discount can't be paid that way.",
+    },
+    {
+      q: "What about Shop Pay, PayPal and other express buttons?",
+      a: "They skip the pop-up, so the pop-up hides them by default. You can show them again in the pop-up's settings in the theme editor.",
+    },
+    {
+      q: "A bank transfer order didn't get the discount",
+      a: `Orders paid by ${method} that skipped the pop-up get ${percent}% off after ordering, if they're still unpaid. For anything missed, use Apply to an order.`,
+    },
+  ];
+  return (
+    <s-section slot="aside" heading="Questions">
+      <s-stack direction="block" gap="base">
+        {questions.map(({ q, a }) => (
+          <details key={q}>
+            <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+              {q}
+            </summary>
+            <div style={{ marginTop: 6 }}>
+              <s-text color="subdued">{a}</s-text>
+            </div>
+          </details>
+        ))}
+      </s-stack>
+    </s-section>
   );
 }
 

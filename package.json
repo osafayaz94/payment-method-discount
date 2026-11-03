@@ -13,7 +13,7 @@
     "shopify": "shopify",
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
-    "typecheck": "wrangler types && react-router typegen && tsc --noEmit",
+    "typecheck": "wrangler types --strict-vars=false && react-router typegen && tsc --noEmit",
     "test": "node --test --experimental-sqlite test/*.test.ts",
     "preview": "react-router build && wrangler dev"
   },
