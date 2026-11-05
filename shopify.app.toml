@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "e51d1ea6a855ffacddfdaa9c8550e3e4"
-name = "Payment Method Discount"
+name = "Nexora: Payment Discounts"
 # The Cloudflare Worker (see README, Deployment).
 application_url = "https://payment-method-discount.osafayaz94.workers.dev"
 embedded = true

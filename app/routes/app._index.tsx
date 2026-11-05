@@ -294,7 +294,7 @@ export default function Index() {
   const shownPercent = percent > 0 ? percent : settings.percent;
 
   return (
-    <s-page heading="Payment method discount">
+    <s-page heading="Nexora: Payment Discounts">
       <Hero
         percent={settings.percent}
         methods={`${settings.gateways.join(", ")}${settings.cardDiscount && plan.cardDiscount ? " and cards" : ""}`}
