@@ -99,7 +99,8 @@
   font-weight: 600;
 }
 
-.pc-submit {
+/* Scoped to the dialog so a theme's own .button styles can't override it. */
+.pc-dialog .pc-submit {
   width: 100%;
   min-height: 48px;
   border: 0;
@@ -111,7 +112,7 @@
   cursor: pointer;
 }
 
-.pc-submit[aria-busy='true'] {
+.pc-dialog .pc-submit[aria-busy='true'] {
   opacity: 0.6;
 }
 
