@@ -87,7 +87,7 @@ Merchants open the app from **Apps** in the Shopify admin. The page has:
 - **Status banner**: the discount on offer and whether it's running (Active, Off, Needs setup, Paused: limit reached)
 - **Get started**: a setup guide that ticks itself off: the discount saved, the payment pop-up turned on, a test order, and the optional cart/product banner and Thank-you block. Theme and checkout blocks are checked with App Bridge's `app.extensions()`, again whenever the merchant comes back to the tab.
 - **Plan**: discounted orders used this month, with an upgrade offer
-- **Your discount**: on/off, percentage, whether cards get it too (Pro and Advanced), and a preview of what customers see that follows the form as you type
+- **Your discount**: on/off, percentage, who gets it: bank transfer, cards (Pro and Advanced) or both, and a preview of what customers see that follows the form as you type
 - **Payment methods**: tick which methods are bank transfer and which are cash on delivery, from the names seen on recent orders
 - **More options** (collapsed): discount names, customer emails, combining with other discounts
 - **Discounted orders**, **Needs attention** (with Retry) and **Apply to an order**

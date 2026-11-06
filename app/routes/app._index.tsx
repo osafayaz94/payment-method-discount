@@ -205,6 +205,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     errors.codGateways = `${both.join(", ")} can't be both discounted and cash on delivery`;
   if (!label) errors.label = "Enter a label";
   if (!cardLabel) errors.cardLabel = "Enter a label";
+  const bankDiscount = form.get("bankDiscount") !== null;
+  const cardDiscount = form.get("cardDiscount") !== null;
+  if (!bankDiscount && !cardDiscount)
+    errors.who = "Tick bank transfer, card, or both";
   if (Object.keys(errors).length) return { ok: false, errors };
 
   const settings: DiscountSettings = {
@@ -213,7 +217,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     gateways,
     label,
     notifyCustomer: form.get("notifyCustomer") !== null,
-    cardDiscount: form.get("cardDiscount") !== null,
+    bankDiscount,
+    cardDiscount,
     cardLabel,
     codGateways,
   };
@@ -264,6 +269,7 @@ export default function Index() {
 
   // The preview follows the form as the merchant types, before saving.
   const [percent, setPercent] = useState(settings.percent);
+  const [bankOn, setBankOn] = useState(settings.bankDiscount);
   const [cardOn, setCardOn] = useState(
     settings.cardDiscount && plan.cardDiscount,
   );
@@ -297,7 +303,7 @@ export default function Index() {
     <s-page heading="Nexora: Payment Discounts">
       <Hero
         percent={settings.percent}
-        methods={`${settings.gateways.join(", ")}${settings.cardDiscount && plan.cardDiscount ? " and cards" : ""}`}
+        methods={discountedMethods(settings, plan.cardDiscount)}
         status={status}
       />
 
@@ -350,7 +356,13 @@ export default function Index() {
                 />
                 <s-stack direction="block" gap="small-200">
                   <s-text type="strong">Who gets it</s-text>
-                  <s-text>✓ Customers who pay by bank transfer</s-text>
+                  <s-checkbox
+                    name="bankDiscount"
+                    label="Customers who pay by bank transfer"
+                    details={`${settings.gateways.join(", ")}, chosen under Payment methods`}
+                    defaultChecked={settings.bankDiscount}
+                    onChange={(event) => setBankOn(event.currentTarget.checked)}
+                  />
                   <s-checkbox
                     name="cardDiscount"
                     label="Customers who pay by credit or debit card"
@@ -363,6 +375,7 @@ export default function Index() {
                     disabled={!plan.cardDiscount}
                     onChange={(event) => setCardOn(event.currentTarget.checked)}
                   />
+                  {errors?.who && <s-text tone="critical">{errors.who}</s-text>}
                   <s-text color="subdued">
                     Cash on delivery always pays full price.
                   </s-text>
@@ -372,6 +385,7 @@ export default function Index() {
               <CheckoutPreview
                 percent={shownPercent}
                 method={method}
+                bankOn={bankOn}
                 cardOn={cardOn}
                 codName={settings.codGateways[0] ?? "Cash on Delivery"}
               />
@@ -526,10 +540,11 @@ export default function Index() {
             <OrderTable orders={applied} />
           ) : (
             <s-paragraph>
-              None yet. Orders paid by {settings.gateways.join(" or ")}
-              {settings.cardDiscount && plan.cardDiscount
-                ? " or card"
-                : ""}{" "}
+              None yet. Orders paid by{" "}
+              {discountedMethods(settings, plan.cardDiscount).replace(
+                " and ",
+                " or ",
+              )}{" "}
               show up here.
             </s-paragraph>
           )}
@@ -874,6 +889,24 @@ function HelpCard({ percent, method }: { percent: number; method: string }) {
   );
 }
 
+// "Bank Deposit and cards", "Bank Deposit" or "cards": who gets the discount.
+function discountedMethods(
+  settings: {
+    gateways: string[];
+    bankDiscount: boolean;
+    cardDiscount: boolean;
+  },
+  planAllowsCard: boolean,
+) {
+  const names = [
+    ...(settings.bankDiscount
+      ? [settings.gateways.join(", ") || "bank transfer"]
+      : []),
+    ...(settings.cardDiscount && planAllowsCard ? ["cards"] : []),
+  ];
+  return names.join(" and ") || "no payment method";
+}
+
 // The app's own colours (navy and gold), used for its custom cards;
 // everything else is standard Polaris.
 const BRAND = {
@@ -1127,11 +1160,13 @@ function UsageCard({
 function CheckoutPreview({
   percent,
   method,
+  bankOn,
   cardOn,
   codName,
 }: {
   percent: number;
   method: string;
+  bankOn: boolean;
   cardOn: boolean;
   codName: string;
 }) {
@@ -1183,7 +1218,7 @@ function CheckoutPreview({
             <s-box border="base" borderRadius="base" padding="small">
               <s-stack direction="block" gap="small-200">
                 <s-text type="strong">How would you like to pay?</s-text>
-                {option("Bank transfer", off, true)}
+                {option("Bank transfer", bankOn ? off : full, true)}
                 {option("Credit / debit card", cardOn ? off : full)}
                 {option("Cash on Delivery", full)}
               </s-stack>
@@ -1200,7 +1235,7 @@ function CheckoutPreview({
             {mockButton("Bank transfer")}
             <s-icon type="arrow-right" />
             <s-box border="base" borderRadius="base" padding="small">
-              {option(method, off, true)}
+              {option(method, bankOn ? off : full, true)}
             </s-box>
           </s-grid>
           <s-grid

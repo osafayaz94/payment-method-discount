@@ -31,7 +31,8 @@ export function cartLinesDiscountsGenerateRun(input) {
   if (!input.discount.discountClasses.includes(DiscountClass.Order)) return NO_DISCOUNT;
 
   let message;
-  if (choice === 'bank') message = settings.label;
+  // bankDiscount is missing from settings saved before it existed: on.
+  if (choice === 'bank' && settings.bankDiscount !== false) message = settings.label;
   else if (choice === 'card' && settings.cardDiscount) message = settings.cardLabel;
   else return NO_DISCOUNT;
 

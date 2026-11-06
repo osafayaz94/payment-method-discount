@@ -8,6 +8,8 @@ export type DiscountSettings = {
   gateways: string[];
   label: string;
   notifyCustomer: boolean;
+  // Which payment choices get the discount: bank transfer and/or card.
+  bankDiscount: boolean;
   cardDiscount: boolean;
   cardLabel: string;
   codGateways: string[];
@@ -112,6 +114,7 @@ export function skipReason(
 ): string | null {
   if (!order) return "order not found";
   if (!settings.enabled) return "discount is turned off";
+  if (!settings.bankDiscount) return "bank transfer discount is turned off";
   const wanted = settings.gateways.map((g) => g.trim().toLowerCase());
   const used = order.paymentGatewayNames ?? [];
   if (!used.some((g) => wanted.includes(g.trim().toLowerCase()))) {
@@ -152,7 +155,8 @@ export async function applyDiscount(
     const discounted =
       settings.enabled &&
       !limit &&
-      (choice === "bank" || (choice === "card" && settings.cardDiscount));
+      ((choice === "bank" && settings.bankDiscount) ||
+        (choice === "card" && settings.cardDiscount));
     if (!discounted) {
       return { applied: false, reason: "payment method chosen before checkout, no discount" };
     }

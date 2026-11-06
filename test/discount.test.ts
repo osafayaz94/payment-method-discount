@@ -17,6 +17,7 @@ const settings: DiscountSettings = {
   gateways: ["Bank Deposit"],
   label: "Bank Deposit discount",
   notifyCustomer: true,
+  bankDiscount: true,
   cardDiscount: false,
   cardLabel: "Card payment discount",
   codGateways: ["Cash on Delivery (COD)"],
@@ -52,6 +53,13 @@ test("cash on delivery is skipped", () => {
 
 test("nothing qualifies while the discount is turned off", () => {
   assert.equal(skipReason(unpaidBankOrder, { ...settings, enabled: false }), "discount is turned off");
+});
+
+test("with the bank transfer discount off, bank orders are skipped", () => {
+  assert.equal(
+    skipReason(unpaidBankOrder, { ...settings, bankDiscount: false, cardDiscount: true }),
+    "bank transfer discount is turned off",
+  );
 });
 
 test("an order already discounted is skipped", () => {
@@ -156,6 +164,23 @@ test("pop-up orders discounted at checkout are tagged, never edited", async () =
     discountedAtCheckout: true,
   });
   assert.deepEqual(calls.map((c) => c.op), ["OrderForDiscount", "AddTags"]);
+});
+
+test("card-only discount: pop-up bank orders get nothing, card orders are tagged", async () => {
+  const cardOnly = { ...settings, bankDiscount: false, cardDiscount: true };
+  const bank = { ...unpaidBankOrder, customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "bank" }] };
+  const bankShop = fakeShopify(bank);
+  assert.deepEqual(await applyDiscount(bankShop.graphql, bank.id, cardOnly), {
+    applied: false,
+    reason: "payment method chosen before checkout, no discount",
+  });
+  assert.deepEqual(bankShop.calls.map((c) => c.op), ["OrderForDiscount"]);
+
+  const card = { ...unpaidBankOrder, customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "card" }] };
+  const cardShop = fakeShopify(card);
+  const result = await applyDiscount(cardShop.graphql, card.id, cardOnly);
+  assert.equal("discountedAtCheckout" in result && result.discountedAtCheckout, true);
+  assert.deepEqual(cardShop.calls.map((c) => c.op), ["OrderForDiscount", "AddTags"]);
 });
 
 test("pop-up orders already tagged are not counted again", async () => {

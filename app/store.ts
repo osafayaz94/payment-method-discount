@@ -55,6 +55,11 @@ const MIGRATIONS: { id: number; sql: string[] }[] = [
       )`,
     ],
   },
+  {
+    // Bank transfer discount can be turned off, for card-only discounts.
+    id: 2,
+    sql: [`ALTER TABLE Settings ADD COLUMN bankDiscount INTEGER NOT NULL DEFAULT 1`],
+  },
 ];
 
 const ready = new WeakMap<Db, Promise<void>>();
@@ -82,12 +87,22 @@ async function migrate(db: Db) {
   const done = new Set(results.map((row) => row.id));
   for (const migration of MIGRATIONS) {
     if (done.has(migration.id)) continue;
-    await db.batch([
-      ...migration.sql.map((sql) => db.prepare(sql)),
-      db
-        .prepare("INSERT OR IGNORE INTO _migrations (id, appliedAt) VALUES (?, ?)")
-        .bind(migration.id, new Date().toISOString()),
-    ]);
+    try {
+      await db.batch([
+        ...migration.sql.map((sql) => db.prepare(sql)),
+        db
+          .prepare("INSERT OR IGNORE INTO _migrations (id, appliedAt) VALUES (?, ?)")
+          .bind(migration.id, new Date().toISOString()),
+      ]);
+    } catch (err) {
+      // Another worker may have applied it at the same moment (an ALTER
+      // TABLE can't run twice): fine if it's now recorded.
+      const row = await db
+        .prepare("SELECT id FROM _migrations WHERE id = ?")
+        .bind(migration.id)
+        .first();
+      if (!row) throw err;
+    }
   }
 }
 
@@ -100,6 +115,7 @@ export type SettingsRow = {
   gateways: string;
   label: string;
   notifyCustomer: boolean;
+  bankDiscount: boolean;
   cardDiscount: boolean;
   cardLabel: string;
   codGateways: string;
@@ -109,13 +125,14 @@ export type SettingsRow = {
   planCheckedAt: Date | null;
 };
 
-const BOOLEAN_COLUMNS = ["enabled", "notifyCustomer", "cardDiscount"] as const;
+const BOOLEAN_COLUMNS = ["enabled", "notifyCustomer", "bankDiscount", "cardDiscount"] as const;
 const SETTINGS_COLUMNS = [
   "enabled",
   "percent",
   "gateways",
   "label",
   "notifyCustomer",
+  "bankDiscount",
   "cardDiscount",
   "cardLabel",
   "codGateways",
@@ -136,6 +153,7 @@ export async function getSettingsRow(db: Db, shop: string): Promise<SettingsRow 
     ...(row as unknown as SettingsRow),
     enabled: Boolean(row.enabled),
     notifyCustomer: Boolean(row.notifyCustomer),
+    bankDiscount: row.bankDiscount === undefined ? true : Boolean(row.bankDiscount),
     cardDiscount: Boolean(row.cardDiscount),
     planCheckedAt: row.planCheckedAt ? new Date(String(row.planCheckedAt)) : null,
   };

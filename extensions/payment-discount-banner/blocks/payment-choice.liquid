@@ -24,6 +24,7 @@
   <script type="application/json" id="payment-choice-config">
     {
       "percent": {{ discount.percent | json }},
+      "bankDiscount": {% if discount.bankDiscount == false %}false{% else %}true{% endif %},
       "cardDiscount": {% if discount.cardDiscount %}true{% else %}false{% endif %},
       "customize": {% if discount.customize %}true{% else %}false{% endif %},
       "showCard": {{ block.settings.show_card | json }},

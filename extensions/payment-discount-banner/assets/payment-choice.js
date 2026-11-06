@@ -176,7 +176,11 @@
     var list = document.createElement('div');
     list.className = 'pc-options';
     list.setAttribute('role', 'radiogroup');
-    list.appendChild(option('bank', text.bank, saveText, true, payDiscounted));
+    list.appendChild(
+      config.bankDiscount === false
+        ? option('bank', text.bank, text.fullPrice, false, payFull)
+        : option('bank', text.bank, saveText, true, payDiscounted)
+    );
     if (config.showCard) {
       list.appendChild(
         config.cardDiscount

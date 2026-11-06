@@ -49,6 +49,7 @@ test("settings are created with defaults, then updated column by column", async 
   assert.equal(row?.percent, 5);
   assert.equal(row?.gateways, "Bank Deposit");
   assert.equal(row?.cardDiscount, false);
+  assert.equal(row?.bankDiscount, true);
   assert.equal(row?.discountId, "gid://1");
   assert.equal(row?.plan, "free");
 
@@ -57,6 +58,7 @@ test("settings are created with defaults, then updated column by column", async 
     enabled: false,
     percent: 7.5,
     cardDiscount: true,
+    bankDiscount: false,
     plan: "pro",
     planCheckedAt: checked,
   });
@@ -64,6 +66,7 @@ test("settings are created with defaults, then updated column by column", async 
   assert.equal(row?.enabled, false);
   assert.equal(row?.percent, 7.5);
   assert.equal(row?.cardDiscount, true);
+  assert.equal(row?.bankDiscount, false);
   assert.equal(row?.discountId, "gid://1");
   assert.equal(row?.plan, "pro");
   assert.equal(row?.planCheckedAt?.getTime(), checked.getTime());
@@ -123,4 +126,19 @@ test("shop/redact deletes everything for the shop only", async () => {
   assert.equal((await getSettingsRow(db, "b.myshopify.com"))?.plan, "pro");
   assert.equal(await getUsage(db, "b.myshopify.com", "2026-11"), 1);
   assert.ok(await storage.loadSession("offline_b.myshopify.com"));
+});
+
+test("a migration already applied by another worker is not an error", async () => {
+  const db = localDb();
+  await getSettingsRow(db, "a.myshopify.com");
+  // A second worker that read the migration list before the first one
+  // recorded its migrations: it tries them again, and the ALTER TABLE fails.
+  const stale: Db = {
+    batch: (statements) => db.batch(statements),
+    prepare: (sql) =>
+      sql === "SELECT id FROM _migrations"
+        ? { ...db.prepare(sql), all: async () => ({ results: [] }) } as Statement
+        : db.prepare(sql),
+  };
+  await assert.doesNotReject(getSettingsRow(stale, "a.myshopify.com"));
 });

@@ -30,13 +30,22 @@
     {%- assign base = cart.items_subtotal_price -%}
   {%- endif -%}
 
-  {%- if base > 0 -%}
+  {%- comment -%}
+    [method] names only what gets the discount: the bank transfer method, the
+    card, or both. Settings saved before bankDiscount existed count it as on.
+  {%- endcomment -%}
+  {%- assign method = '' -%}
+  {%- unless discount.bankDiscount == false -%}
+    {%- assign method = discount.gateways | first | default: 'Bank Deposit' -%}
+  {%- endunless -%}
+  {%- if discount.cardDiscount and card_name != blank -%}
+    {%- if method != '' -%}{%- assign method = method | append: ' or ' -%}{%- endif -%}
+    {%- assign method = method | append: card_name -%}
+  {%- endif -%}
+
+  {%- if base > 0 and method != '' -%}
     {%- comment -%} Rounded down to the cent, as Shopify does for the order discount. {%- endcomment -%}
     {%- assign saving = base | times: discount.percent | divided_by: 100.0 | floor -%}
-    {%- assign method = discount.gateways | first | default: 'Bank Deposit' -%}
-    {%- if discount.cardDiscount and card_name != blank -%}
-      {%- assign method = method | append: ' or ' | append: card_name -%}
-    {%- endif -%}
     {%- assign percent = discount.percent | append: '%' -%}
     {%- assign amount = saving | money -%}
     {%- assign message = text
@@ -87,7 +96,7 @@
       "id": "card_name",
       "label": "Card name in [method]",
       "default": "Credit / Debit Card",
-      "info": "When cards also get the discount in the app, [method] reads \"Bank Deposit or\" followed by this."
+      "info": "Used in [method] when cards get the discount in the app: on its own, or after \"Bank Deposit or\" when bank transfer does too."
     },
     {
       "type": "color",
