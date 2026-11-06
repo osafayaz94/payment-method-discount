@@ -215,6 +215,12 @@ export default function Home() {
               />
             </s-stack>
             <ProgressBar value={doneCount} max={steps.length} />
+            <s-text color="subdued">
+              New here? The{" "}
+              <s-link href="/app/guide">step-by-step guide</s-link> walks
+              through everything with pictures.
+            </s-text>
+
             {steps.map((step, index) => (
               <div
                 key={step.title}

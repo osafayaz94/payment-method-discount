@@ -23,6 +23,14 @@ export default function Help() {
 
   return (
     <s-page heading="Help">
+      <s-section>
+        <s-paragraph>
+          Setting up for the first time? Follow the{" "}
+          <s-link href="/app/guide">step-by-step guide</s-link>, with a picture
+          for each step.
+        </s-paragraph>
+      </s-section>
+
       <HelpCard percent={percent} method={method} />
 
       <s-section heading="Tell customers at checkout">
