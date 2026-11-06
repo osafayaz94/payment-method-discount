@@ -19,6 +19,10 @@ const settings: DiscountSettings = {
   notifyCustomer: true,
   bankDiscount: true,
   cardDiscount: false,
+  cardGateways: [],
+  showPopUp: true,
+  showBanner: true,
+  showThankYou: true,
   cardLabel: "Card payment discount",
   codGateways: ["Cash on Delivery (COD)"],
 };

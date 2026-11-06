@@ -7,7 +7,10 @@ const UPDATED = "November 5, 2026";
 
 export const meta: MetaFunction = () => [
   { title: `Privacy policy · ${APP_NAME}` },
-  { name: "description", content: `How ${APP_NAME} handles store and customer data.` },
+  {
+    name: "description",
+    content: `How ${APP_NAME} handles store and customer data.`,
+  },
 ];
 
 const sections: { heading: string; body: React.ReactNode }[] = [
@@ -28,7 +31,10 @@ const sections: { heading: string; body: React.ReactNode }[] = [
       <>
         <p>For each store that installs the app, we store:</p>
         <ul>
-          <li>the store&apos;s Shopify domain and the access token Shopify issues to the app;</li>
+          <li>
+            the store&apos;s Shopify domain and the access token Shopify issues
+            to the app;
+          </li>
           <li>
             the merchant&apos;s settings: the discount percentage, the payment
             method names, discount labels and similar options;
@@ -52,11 +58,12 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     body: (
       <>
         <p>
-          When an order is placed, Shopify notifies the app with the order&apos;s
-          ID. The app then reads the order&apos;s payment method names, payment
-          status, tags, cart attributes and line items, only to decide whether
-          the order gets the discount and, if it does, to apply it to the
-          order. This information is used at that moment and is not kept.
+          When an order is placed, Shopify notifies the app with the
+          order&apos;s ID. The app then reads the order&apos;s payment method
+          names, payment status, tags, cart attributes and line items, only to
+          decide whether the order gets the discount and, if it does, to apply
+          it to the order. This information is used at that moment and is not
+          kept.
         </p>
         <p>
           The app may add the tags <code>payment-discount</code> or{" "}
@@ -72,9 +79,9 @@ const sections: { heading: string; body: React.ReactNode }[] = [
       <p>
         The pop-up that asks customers how they&apos;d like to pay stores their
         choice in the store&apos;s cart, as a cart attribute, so checkout can
-        apply the discount. The app doesn&apos;t use cookies of its own, doesn&apos;t
-        track customers and doesn&apos;t send their data to the app&apos;s
-        servers.
+        apply the discount. The app doesn&apos;t use cookies of its own,
+        doesn&apos;t track customers and doesn&apos;t send their data to the
+        app&apos;s servers.
       </p>
     ),
   },

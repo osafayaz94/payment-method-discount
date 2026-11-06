@@ -12,15 +12,21 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
     webhook = await authenticate.webhook(request);
   } catch (err) {
     // A bad signature or an unknown app is answered with an error status.
-    console.error(`orders/create: webhook rejected (${err instanceof Response ? err.status : err})`);
+    console.error(
+      `orders/create: webhook rejected (${err instanceof Response ? err.status : err})`,
+    );
     throw err;
   }
   const { shop, admin, payload } = webhook;
   const orderId = payload?.admin_graphql_api_id as string | undefined;
-  console.log(`${shop} orders/create received for ${orderId ?? "unknown order"}`);
+  console.log(
+    `${shop} orders/create received for ${orderId ?? "unknown order"}`,
+  );
 
   if (!admin) {
-    console.log(`${shop} ${orderId}: skipped (no session for this shop; open the app once to create it)`);
+    console.log(
+      `${shop} ${orderId}: skipped (no session for this shop; open the app once to create it)`,
+    );
     return new Response();
   }
   if (!orderId || inProgress.has(orderId)) return new Response();
@@ -31,7 +37,11 @@ export const action = async ({ request, context }: ActionFunctionArgs) => {
   inProgress.add(orderId);
   const work = (async () => {
     try {
-      const { result, settings } = await discountOrder(toGraphQL(admin), shop, orderId);
+      const { result, settings } = await discountOrder(
+        toGraphQL(admin),
+        shop,
+        orderId,
+      );
       console.log(
         result.applied
           ? `${shop} ${orderId}: ${settings.percent}% off, new total ${result.total.amount} ${result.total.currencyCode}`

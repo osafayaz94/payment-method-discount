@@ -13,7 +13,8 @@
 {%- endcomment -%}
 {%- assign this_month = 'now' | date: '%Y-%m' -%}
 
-{%- if discount and discount.enabled and discount.percent > 0 and discount.pausedMonth != this_month -%}
+{%- comment -%} showPopUp: the app's on/off switch (missing in older settings: on). {%- endcomment -%}
+{%- if discount and discount.enabled and discount.percent > 0 and discount.pausedMonth != this_month and discount.showPopUp != false -%}
   {%- capture variant_prices -%}
     {%- if product -%}
       {%- for variant in product.variants -%}

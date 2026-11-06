@@ -50,6 +50,10 @@ test("settings are created with defaults, then updated column by column", async 
   assert.equal(row?.gateways, "Bank Deposit");
   assert.equal(row?.cardDiscount, false);
   assert.equal(row?.bankDiscount, true);
+  assert.equal(row?.showPopUp, true);
+  assert.equal(row?.showBanner, true);
+  assert.equal(row?.showThankYou, true);
+  assert.equal(row?.cardGateways, "");
   assert.equal(row?.discountId, "gid://1");
   assert.equal(row?.plan, "free");
 

@@ -15,6 +15,10 @@ export async function getSettings(shop: string): Promise<DiscountSettings> {
     notifyCustomer: true,
     bankDiscount: true,
     cardDiscount: false,
+    showPopUp: true,
+    showBanner: true,
+    showThankYou: true,
+    cardGateways: "",
     cardLabel: "Card payment discount",
     codGateways: "Cash on Delivery (COD)",
   };
@@ -27,6 +31,10 @@ export async function getSettings(shop: string): Promise<DiscountSettings> {
     notifyCustomer: s.notifyCustomer,
     bankDiscount: s.bankDiscount,
     cardDiscount: s.cardDiscount,
+    showPopUp: s.showPopUp,
+    showBanner: s.showBanner,
+    showThankYou: s.showThankYou,
+    cardGateways: parseGateways(s.cardGateways ?? ""),
     cardLabel: s.cardLabel,
     codGateways: parseGateways(s.codGateways),
   };
@@ -37,6 +45,7 @@ export async function saveSettings(shop: string, settings: DiscountSettings) {
     ...settings,
     gateways: settings.gateways.join("\n"),
     codGateways: settings.codGateways.join("\n"),
+    cardGateways: settings.cardGateways.join("\n"),
   };
   await upsertSettings(getDb(), shop, data);
 }
@@ -78,9 +87,15 @@ export async function getPlanState(
   return { plan, month, used, limitReason: limitReason(plan, used) };
 }
 
-// Settings with what the plan doesn't include switched off.
+// Settings as they take effect: what the plan doesn't include, and a
+// discount for a kind of payment method the store hasn't listed, are off.
 export function settingsForPlan(settings: DiscountSettings, plan: Plan): DiscountSettings {
-  return { ...settings, cardDiscount: settings.cardDiscount && plan.cardDiscount };
+  return {
+    ...settings,
+    bankDiscount: settings.bankDiscount && settings.gateways.length > 0,
+    cardDiscount:
+      settings.cardDiscount && plan.cardDiscount && settings.cardGateways.length > 0,
+  };
 }
 
 // Writes the settings, as the shop's plan allows them, to the metafields.
@@ -110,6 +125,9 @@ export async function publishSettings(
     label: settings.label,
     bankDiscount: settings.bankDiscount,
     cardDiscount: settings.cardDiscount,
+    showPopUp: settings.showPopUp,
+    showBanner: settings.showBanner,
+    showThankYou: settings.showThankYou,
     cardLabel: settings.cardLabel,
     codGateways: settings.codGateways,
     customize: state.plan.customize,

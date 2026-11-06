@@ -22,6 +22,8 @@ function Extension() {
     ) : null;
   }
   if (!settings.enabled || !(settings.percent > 0)) return null;
+  // Switched off in the app.
+  if (settings.showThankYou === false && !inEditor) return null;
   // This block is for bank transfer orders; off when only cards are discounted.
   if (settings.bankDiscount === false && !inEditor) return null;
   // This month's discounted orders on the shop's plan are used up, so the

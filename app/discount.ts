@@ -8,9 +8,18 @@ export type DiscountSettings = {
   gateways: string[];
   label: string;
   notifyCustomer: boolean;
+  // Card payment method names, as the merchant listed them. Only used to
+  // tell whether the store takes cards; checkout treats every method that
+  // isn't bank transfer or cash on delivery as card.
+  cardGateways: string[];
   // Which payment choices get the discount: bank transfer and/or card.
   bankDiscount: boolean;
   cardDiscount: boolean;
+  // The storefront and Thank-you blocks, switched on and off from the app
+  // once they're added in the theme and checkout editors.
+  showPopUp: boolean;
+  showBanner: boolean;
+  showThankYou: boolean;
   cardLabel: string;
   codGateways: string[];
 };

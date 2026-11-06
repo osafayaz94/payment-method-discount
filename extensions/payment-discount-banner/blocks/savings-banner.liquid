@@ -9,6 +9,9 @@
 {%- assign this_month = 'now' | date: '%Y-%m' -%}
 {%- assign paused = false -%}
 {%- if discount.pausedMonth == this_month -%}{%- assign paused = true -%}{%- endif -%}
+{%- comment -%} Switched off in the app (missing in older settings: on). {%- endcomment -%}
+{%- assign switched_off = false -%}
+{%- if discount.showBanner == false -%}{%- assign switched_off = true -%}{%- endif -%}
 
 {%- comment -%} Own wording and colours are part of the Pro and Advanced plans. {%- endcomment -%}
 {%- if discount.customize -%}
@@ -23,7 +26,7 @@
   {%- assign text_color = '#1B5E20' -%}
 {%- endif -%}
 
-{%- if discount and discount.enabled and discount.percent > 0 and paused == false -%}
+{%- if discount and discount.enabled and discount.percent > 0 and paused == false and switched_off == false -%}
   {%- if template.name == 'product' and product -%}
     {%- assign base = product.selected_or_first_available_variant.price -%}
   {%- else -%}
@@ -68,7 +71,9 @@
   {%- endif -%}
 {%- elsif request.design_mode -%}
   <div style="padding: 12px 16px; border: 1px dashed #999; border-radius: 8px; margin: 12px 0;" {{ block.shopify_attributes }}>
-    {%- if paused -%}
+    {%- if switched_off -%}
+      Payment discount banner: switched off in the Payment Discounts app. Turn it on there to show it.
+    {%- elsif paused -%}
       Payment discount banner: hidden until next month, because this month's discounted orders on your plan are used up. Upgrade in the Payment Method Discount app to show it again.
     {%- else -%}
       Payment discount banner: open the Payment Method Discount app, turn the discount on and click Save.

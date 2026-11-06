@@ -81,17 +81,17 @@ The plan is read from the Partner API's [Active Subscription API](https://shopif
 
 Without the Partner API settings below, billing is off and every feature is unlocked (for development). The app's page then says so.
 
-## The app's page
+## The app's pages
 
-Merchants open the app from **Apps** in the Shopify admin. The page has:
-- **Status banner**: the discount on offer and whether it's running (Active, Off, Needs setup, Paused: limit reached)
-- **Get started**: a setup guide that ticks itself off: the discount saved, the payment pop-up turned on, a test order, and the optional cart/product banner and Thank-you block. Theme and checkout blocks are checked with App Bridge's `app.extensions()`, again whenever the merchant comes back to the tab.
-- **Plan**: discounted orders used this month, with an upgrade offer
-- **Your discount**: on/off, percentage, who gets it: bank transfer, cards (Pro and Advanced) or both, and a preview of what customers see that follows the form as you type
-- **Payment methods**: tick which methods are bank transfer and which are cash on delivery, from the names seen on recent orders
-- **More options** (collapsed): discount names, customer emails, combining with other discounts
-- **Discounted orders**, **Needs attention** (with Retry) and **Apply to an order**
-- **Questions**: short answers to common questions, and suggested wording for the payment method's description
+Merchants open the app from **Apps** in the Shopify admin. Its menu has:
+- **Home** (`app/routes/app._index.tsx`): the status banner, a short Get started list until setup is done, **on/off switches** that save straight away (discount, bank transfer, card, payment pop-up, savings banner, Thank-you amount), this month's usage and the latest discounted orders. The pop-up, banner and Thank-you block have to be added once in the theme or checkout editor (Shopify doesn't let apps do that); until then their switch shows a button that opens the editor. Theme and checkout blocks are checked with App Bridge's `app.extensions()`.
+- **Settings** (`app.settings.tsx`), in three steps: 1. the percentage and who gets it (bank transfer, card or both); 2. the store's payment methods and what each one is (bank transfer, card, cash on delivery), which checkout uses to show only the methods that match the customer's choice; 3. a live preview of the pop-up and checkout, extra settings, and Save.
+  Bank transfer and card discounts can only be turned on once a method of that kind is listed in step 2: Shopify's API doesn't list a store's payment methods, so the app goes by what the merchant lists (and the names seen on recent orders). With neither, the app asks the merchant to enable Bank Deposit, a card method or both first.
+- **Orders** (`app.orders.tsx`): discounted orders, Needs attention (with Retry), and Apply to an order
+- **Plans & pricing** (`app.plans.tsx`): the plans with prices and features, the current plan and the month's usage
+- **Help** (`app.help.tsx`): common questions, suggested wording for the payment method's description, contact and privacy policy
+
+Shared pieces are in `app/components/ui.tsx` and `app/admin.server.ts`.
 
 ## Project layout
 
@@ -101,7 +101,7 @@ Merchants open the app from **Apps** in the Shopify admin. The page has:
 | `app/settings.server.ts` | Saves and loads each shop's settings, publishes them to metafields for the extensions as the plan allows, and runs the discount on an order within the plan |
 | `app/plans.ts` | What each plan allows, and the store's month |
 | `app/billing.server.ts` | Reads the plan from the Partner API, and counts discounted orders per month |
-| `app/routes/app._index.tsx` | Settings page shown in the Shopify admin |
+| `app/routes/app.*.tsx` | The app's pages in the Shopify admin (see above) |
 | `app/routes/webhooks.orders.create.tsx` | Runs the discount on new orders |
 | `app/routes/webhooks.compliance.tsx` | Required privacy webhooks |
 | `extensions/payment-discount-banner/` | Theme app extension: the cart and product page banner, and the payment choice pop-up (`blocks/payment-choice.liquid`, `assets/payment-choice.js`) |

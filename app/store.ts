@@ -60,6 +60,16 @@ const MIGRATIONS: { id: number; sql: string[] }[] = [
     id: 2,
     sql: [`ALTER TABLE Settings ADD COLUMN bankDiscount INTEGER NOT NULL DEFAULT 1`],
   },
+  {
+    // On/off switches for the pop-up, banner and Thank-you block.
+    id: 3,
+    sql: [
+      `ALTER TABLE Settings ADD COLUMN showPopUp INTEGER NOT NULL DEFAULT 1`,
+      `ALTER TABLE Settings ADD COLUMN showBanner INTEGER NOT NULL DEFAULT 1`,
+      `ALTER TABLE Settings ADD COLUMN showThankYou INTEGER NOT NULL DEFAULT 1`,
+      `ALTER TABLE Settings ADD COLUMN cardGateways TEXT NOT NULL DEFAULT ''`,
+    ],
+  },
 ];
 
 const ready = new WeakMap<Db, Promise<void>>();
@@ -117,6 +127,10 @@ export type SettingsRow = {
   notifyCustomer: boolean;
   bankDiscount: boolean;
   cardDiscount: boolean;
+  showPopUp: boolean;
+  showBanner: boolean;
+  showThankYou: boolean;
+  cardGateways: string;
   cardLabel: string;
   codGateways: string;
   discountId: string | null;
@@ -125,7 +139,15 @@ export type SettingsRow = {
   planCheckedAt: Date | null;
 };
 
-const BOOLEAN_COLUMNS = ["enabled", "notifyCustomer", "bankDiscount", "cardDiscount"] as const;
+const BOOLEAN_COLUMNS = [
+  "enabled",
+  "notifyCustomer",
+  "bankDiscount",
+  "cardDiscount",
+  "showPopUp",
+  "showBanner",
+  "showThankYou",
+] as const;
 const SETTINGS_COLUMNS = [
   "enabled",
   "percent",
@@ -134,6 +156,10 @@ const SETTINGS_COLUMNS = [
   "notifyCustomer",
   "bankDiscount",
   "cardDiscount",
+  "showPopUp",
+  "showBanner",
+  "showThankYou",
+  "cardGateways",
   "cardLabel",
   "codGateways",
   "discountId",
@@ -154,6 +180,9 @@ export async function getSettingsRow(db: Db, shop: string): Promise<SettingsRow 
     enabled: Boolean(row.enabled),
     notifyCustomer: Boolean(row.notifyCustomer),
     bankDiscount: row.bankDiscount === undefined ? true : Boolean(row.bankDiscount),
+    showPopUp: row.showPopUp === undefined ? true : Boolean(row.showPopUp),
+    showBanner: row.showBanner === undefined ? true : Boolean(row.showBanner),
+    showThankYou: row.showThankYou === undefined ? true : Boolean(row.showThankYou),
     cardDiscount: Boolean(row.cardDiscount),
     planCheckedAt: row.planCheckedAt ? new Date(String(row.planCheckedAt)) : null,
   };
