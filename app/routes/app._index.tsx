@@ -55,7 +55,6 @@ const SWITCHES = [
   "enabled",
   "bankDiscount",
   "cardDiscount",
-  "showPopUp",
   "showBanner",
   "showThankYou",
 ] as const satisfies readonly (keyof DiscountSettings)[];
@@ -123,7 +122,6 @@ const LABELS: Record<SwitchField, string> = {
   enabled: "Discount",
   bankDiscount: "Bank transfer discount",
   cardDiscount: "Card discount",
-  showPopUp: "Payment pop-up",
   showBanner: "Savings banner",
   showThankYou: "Thank-you page amount",
 };
@@ -152,7 +150,7 @@ export default function Home() {
     ? { color: BRAND.muted, text: "Off" }
     : paused
       ? { color: BRAND.coral, text: "Paused: limit reached" }
-      : !discountLive || active?.popUp === false || !settings.showPopUp
+      : !discountLive || active?.popUp === false
         ? { color: BRAND.amber, text: "Needs setup" }
         : { color: BRAND.green, text: "Active" };
 
@@ -241,70 +239,92 @@ export default function Home() {
 
       {!hasBank && !hasCard && <EnableMethodsFirst />}
 
-      <s-section heading="On / off">
+      <s-section heading="Discount">
         <s-stack direction="block" gap="base">
           <s-paragraph color="subdued">
-            Each switch saves straight away. How it works: a pop-up asks
-            customers how they&apos;ll pay before checkout; discounted methods
-            get {settings.percent}% off, cash on delivery pays full price.
+            Switches save straight away. Discounted payment choices get{" "}
+            {settings.percent}% off; cash on delivery always pays full price.
           </s-paragraph>
           <QuickSwitch
             field="enabled"
             label="Discount"
-            details="Turns every discount on or off."
+            details="The main switch: when it's off, every customer pays full price."
             checked={settings.enabled}
           />
-          <QuickSwitch
-            field="bankDiscount"
-            label="Bank transfer discount"
-            details={
-              hasBank
-                ? `${settings.percent}% off for ${settings.gateways.join(", ")}.`
-                : "First enable a bank transfer method, such as Bank Deposit, in Shopify and add it in Settings, step 2."
-            }
-            checked={bankOn}
-            locked={
-              !hasBank
-                ? "No bank transfer method yet."
-                : bankOn && !cardOn
-                  ? "Card is off, so this one stays on."
-                  : undefined
-            }
-          />
-          <QuickSwitch
-            field="cardDiscount"
-            label="Card discount"
-            details={
-              !plan.cardDiscount
-                ? "Available on the Pro and Advanced plans."
-                : hasCard
-                  ? `${settings.percent}% off for ${settings.cardGateways.join(", ")}, when chosen in the pop-up.`
-                  : "First enable a card payment method in Shopify and add it in Settings, step 2."
-            }
-            checked={cardOn}
-            locked={
-              !plan.cardDiscount
-                ? "Upgrade to use it."
-                : !hasCard
-                  ? "No card payment method yet."
-                  : cardOn && !bankOn
-                    ? "Bank transfer is off, so this one stays on."
-                    : undefined
-            }
-          />
-          <QuickSwitch
-            field="showPopUp"
-            label="Payment pop-up"
-            details="Asks how the customer will pay when they click Check out or Buy it now. Without it, checkout has no discount."
-            checked={settings.showPopUp}
-            added={active?.popUp}
-            addHref={`${themeEditor}?context=apps&activateAppId=${apiKey}/payment-choice`}
-            addLabel="Turn on in theme"
+          {/* Who gets the discount: only matters while the discount is on. */}
+          <div
+            style={{
+              marginLeft: 20,
+              paddingLeft: 16,
+              borderLeft: `3px solid ${settings.enabled ? BRAND.accent : BRAND.track}`,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              opacity: settings.enabled ? 1 : 0.55,
+            }}
+          >
+            <s-text type="strong">Who gets it</s-text>
+            <QuickSwitch
+              field="bankDiscount"
+              label="Bank transfer"
+              details={
+                hasBank
+                  ? `${settings.percent}% off for ${settings.gateways.join(", ")}.`
+                  : "First enable a bank transfer method, such as Bank Deposit, in Shopify and add it in Settings, step 2."
+              }
+              checked={bankOn}
+              locked={
+                !settings.enabled
+                  ? "Turn on Discount first."
+                  : !hasBank
+                    ? "No bank transfer method yet."
+                    : bankOn && !cardOn
+                      ? "Card is off, so this one stays on."
+                      : undefined
+              }
+            />
+            <QuickSwitch
+              field="cardDiscount"
+              label="Credit or debit card"
+              details={
+                !plan.cardDiscount
+                  ? "Available on the Pro and Advanced plans."
+                  : hasCard
+                    ? `${settings.percent}% off for ${settings.cardGateways.join(", ")}, when chosen in the pop-up.`
+                    : "First enable a card payment method in Shopify and add it in Settings, step 2."
+              }
+              checked={cardOn}
+              locked={
+                !settings.enabled
+                  ? "Turn on Discount first."
+                  : !plan.cardDiscount
+                    ? "Upgrade to use it."
+                    : !hasCard
+                      ? "No card payment method yet."
+                      : cardOn && !bankOn
+                        ? "Bank transfer is off, so this one stays on."
+                        : undefined
+              }
+            />
+          </div>
+        </s-stack>
+      </s-section>
+
+      <s-section heading="On your store">
+        <s-stack direction="block" gap="base">
+          <PopUpRow
+            on={active?.popUp}
+            href={`${themeEditor}?context=apps&activateAppId=${apiKey}/payment-choice`}
           />
           <QuickSwitch
             field="showBanner"
             label="Savings banner"
-            details={`"Pay by ${method} at checkout and save ${settings.percent}%" on product and cart pages.`}
+            optional
+            details={`Tells shoppers about the saving before they check out: "Pay by ${method} at checkout and save ${settings.percent}%", on product and cart pages.`}
+            image={{
+              src: "/guide/banner.png",
+              alt: "A product page with the savings banner under the price",
+            }}
             checked={settings.showBanner}
             added={active?.banner}
             addHref={`${themeEditor}?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`}
@@ -313,7 +333,12 @@ export default function Home() {
           <QuickSwitch
             field="showThankYou"
             label="Thank-you page amount"
-            details="After a bank transfer order, shows the discount and the amount to pay."
+            optional
+            details="After a bank transfer order, shows the discount and the amount to transfer."
+            image={{
+              src: "/guide/thankyou.png",
+              alt: "The Thank-you page showing the discount and the amount to pay",
+            }}
             checked={settings.showThankYou}
             added={active?.thankYou}
             addHref="shopify://admin/settings/checkout/editor"
@@ -358,11 +383,15 @@ function QuickSwitch({
   added,
   addHref,
   addLabel,
+  optional = false,
+  image,
 }: {
   field: SwitchField;
   label: string;
   details: string;
   checked: boolean;
+  optional?: boolean;
+  image?: { src: string; alt: string };
   locked?: string;
   added?: boolean;
   addHref?: string;
@@ -381,6 +410,7 @@ function QuickSwitch({
           <s-stack direction="block" gap="small-100">
             <s-stack direction="inline" gap="small-200" alignItems="center">
               <s-text type="strong">{label}</s-text>
+              {optional && <s-badge>Optional</s-badge>}
               {needsAdding ? (
                 <s-badge tone="warning">Not added yet</s-badge>
               ) : (
@@ -400,6 +430,7 @@ function QuickSwitch({
             )}
           </s-stack>
         </div>
+        {image && <Thumbnail {...image} />}
         <s-switch
           // Remount when the saved value changes, so a refused change snaps back.
           key={`${field}-${checked}`}
@@ -420,6 +451,83 @@ function QuickSwitch({
         />
       </div>
     </s-box>
+  );
+}
+
+// The pop-up is how customers choose bank transfer or card before
+// checkout, so it's required: no off switch, only whether it's switched on
+// in the theme (which Shopify lets only the merchant do, in the editor).
+function PopUpRow({ on, href }: { on: boolean | undefined; href: string }) {
+  return (
+    <s-box padding="base" borderWidth="base" borderRadius="base">
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+          <s-stack direction="block" gap="small-100">
+            <s-stack direction="inline" gap="small-200" alignItems="center">
+              <s-text type="strong">Payment pop-up</s-text>
+              <s-badge tone="info">Required</s-badge>
+              {on === true && (
+                <s-badge tone="success">On in your theme</s-badge>
+              )}
+              {on === false && (
+                <s-badge tone="critical">Not on in your theme</s-badge>
+              )}
+            </s-stack>
+            <s-text color="subdued">
+              When a customer clicks Check out or Buy it now, it asks how
+              they&apos;ll pay. This is how they choose bank transfer (or card)
+              and get the discount at checkout; without it there&apos;s no
+              discount.
+            </s-text>
+            {on !== true && (
+              <s-stack direction="inline" gap="small-200">
+                <s-button href={href} target="_top" variant="primary">
+                  Turn on in theme
+                </s-button>
+              </s-stack>
+            )}
+          </s-stack>
+        </div>
+        <Thumbnail
+          src="/guide/popup.png"
+          alt="The pop-up: bank transfer and card save 5%, cash on delivery is full price"
+        />
+      </div>
+    </s-box>
+  );
+}
+
+// A small picture of what a block looks like, opening full size.
+function Thumbnail({ src, alt }: { src: string; alt: string }) {
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noreferrer"
+      title="Open full size"
+      style={{ flexShrink: 0 }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        style={{
+          width: 180,
+          height: 110,
+          objectFit: "contain",
+          background: "#fafafa",
+          borderRadius: 8,
+          border: "1px solid #e3e3e3",
+          display: "block",
+        }}
+      />
+    </a>
   );
 }
 

@@ -91,9 +91,9 @@ export default function Guide() {
         <>
           Click the button below: your theme editor opens on App embeds.{" "}
           <b>1</b> App embeds is selected, <b>2</b> make sure Payment choice
-          pop-up is switched on, <b>3</b> click Save. Shopify only lets you do
-          this in the theme editor, once; afterwards you can turn it on and off
-          in this app.
+          pop-up is switched on, <b>3</b> click Save. The pop-up is required:
+          it&apos;s how customers choose bank transfer or card, so without it
+          there&apos;s no discount. Home shows whether it&apos;s on.
         </>
       ),
       image: "theme",
@@ -166,13 +166,15 @@ export default function Guide() {
       title: "Turn things on and off",
       text: (
         <>
-          On Home, each switch saves straight away: the whole discount, bank
-          transfer, card, the pop-up, the banner and the Thank-you amount. A
-          switch that can&apos;t be used yet says why.
+          On Home, each switch saves straight away. Discount is the main switch;
+          under it, choose who gets it: bank transfer, card or both. Under On
+          your store, the pop-up is required, and the savings banner and
+          Thank-you amount can be switched on and off. A switch that can&apos;t
+          be used yet says why.
         </>
       ),
       image: "switches",
-      alt: "Home's on and off switches",
+      alt: "Home: the Discount switch with bank transfer and card under it, and On your store with the required pop-up, the savings banner and the Thank-you amount",
       links: [{ label: "Open Home", href: "/app" }],
     },
     {

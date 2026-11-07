@@ -92,6 +92,8 @@ export async function getPlanState(
 export function settingsForPlan(settings: DiscountSettings, plan: Plan): DiscountSettings {
   return {
     ...settings,
+    // Required: it's how customers choose a discounted method.
+    showPopUp: true,
     bankDiscount: settings.bankDiscount && settings.gateways.length > 0,
     cardDiscount:
       settings.cardDiscount && plan.cardDiscount && settings.cardGateways.length > 0,
