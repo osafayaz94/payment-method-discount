@@ -65,6 +65,25 @@ export const action = async ({
 }: ActionFunctionArgs): Promise<ActionResult> => {
   const base = await loadBase(request);
   const form = await request.formData();
+
+  // The percentage, typed in on Home.
+  if (form.get("intent") === "percent") {
+    const percent = Number(String(form.get("percent") ?? "").replace(",", "."));
+    if (!(percent > 0 && percent <= 100)) {
+      return { ok: false, message: "Enter a percentage above 0 and up to 100" };
+    }
+    await saveSettings(base.shop, { ...base.settings, percent });
+    try {
+      await publishSettings(base.graphql, base.shop);
+    } catch (err) {
+      return {
+        ok: false,
+        message: `Saved, but the store was not updated: ${(err as Error).message}`,
+      };
+    }
+    return { ok: true, message: `Discount set to ${percent}%` };
+  }
+
   const field = String(form.get("field")) as SwitchField;
   if (form.get("intent") !== "toggle" || !SWITCHES.includes(field)) {
     return { ok: false, message: "Unknown setting" };
@@ -245,6 +264,7 @@ export default function Home() {
             Switches save straight away. Discounted payment choices get{" "}
             {settings.percent}% off; cash on delivery always pays full price.
           </s-paragraph>
+          <PercentBox percent={settings.percent} />
           <QuickSwitch
             field="enabled"
             label="Discount"
@@ -450,6 +470,64 @@ function QuickSwitch({
           }
         />
       </div>
+    </s-box>
+  );
+}
+
+// The discount percentage, typed in and saved on its own.
+function PercentBox({ percent }: { percent: number }) {
+  const fetcher = useFetcher<ActionResult>();
+  useToastResult(fetcher.data);
+  const saving = fetcher.state !== "idle";
+  return (
+    <s-box padding="base" borderWidth="base" borderRadius="base">
+      <fetcher.Form method="post">
+        <input type="hidden" name="intent" value="percent" />
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            alignItems: "flex-end",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ flex: "1 1 220px" }}>
+            <s-stack direction="block" gap="small-100">
+              <s-text type="strong">Discount percentage</s-text>
+              <s-text color="subdued">
+                How much customers save when they pay by a discounted method.
+                Type any amount, such as 3, 5 or 7.5.
+              </s-text>
+            </s-stack>
+          </div>
+          <div style={{ width: 140 }}>
+            <s-number-field
+              // Remount when the saved value changes.
+              key={percent}
+              name="percent"
+              label="Discount percentage"
+              labelAccessibilityVisibility="exclusive"
+              suffix="%"
+              min={0.01}
+              max={100}
+              step={0.5}
+              defaultValue={String(percent)}
+              error={
+                fetcher.data && !fetcher.data.ok
+                  ? fetcher.data.message
+                  : undefined
+              }
+            />
+          </div>
+          <s-button
+            type="submit"
+            variant="primary"
+            {...(saving ? { loading: true } : {})}
+          >
+            Save
+          </s-button>
+        </div>
+      </fetcher.Form>
     </s-box>
   );
 }
