@@ -1,8 +1,10 @@
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
 
-// Shows the customer the discount and the amount to transfer right after they
-// order. The app applies the discount to the order a few seconds later
+// Shows a bank transfer customer the discount and the amount to transfer
+// right after they order. Orders that went through the payment pop-up got the
+// discount at checkout, so the order total is the amount to transfer. Orders
+// that skipped it get the discount from the app a few seconds later
 // (app/discount.ts), so this works out the same numbers from the checkout.
 export default function extension() {
   render(<Extension />, document.body);
@@ -31,12 +33,43 @@ function Extension() {
   if (settings.pausedMonth && settings.pausedMonth === currentMonth(settings.timeZone) && !inEditor) {
     return null;
   }
-  // A payment method chosen in the pop-up before checkout means the discount
-  // was already taken off at checkout; showing it again would double it.
-  const choseBeforeCheckout = (shopify.attributes?.value ?? []).some(
+  const money = (amount) => shopify.i18n.formatCurrency(amount);
+  const method = settings.gateways?.[0] ?? 'Bank Deposit';
+  const total = Number(shopify.cost.totalAmount.value.amount);
+  // Like Shopify and the app's order edit, discount each line and round down
+  // to the cent, so the amounts match.
+  const worked = shopify.lines.value.reduce((sum, line) => {
+    const lineTotal = Number(line.cost.totalAmount.amount);
+    return sum + Math.floor(lineTotal * settings.percent + 1e-6) / 100;
+  }, 0);
+
+  // Chosen in the pop-up before checkout: the discount is already in the
+  // total. Only bank transfer needs the amount to transfer (cards are already
+  // charged, cash on delivery has no discount).
+  const choice = (shopify.attributes?.value ?? []).find(
     (attribute) => attribute.key === '_payment_choice',
-  );
-  if (choseBeforeCheckout && !inEditor) return null;
+  )?.value;
+  if (choice && !inEditor) {
+    if (choice !== 'bank') return null;
+    // The discount Shopify applied, by its name; worked out if not found.
+    const applied = (shopify.discountAllocations?.value ?? []).find(
+      (allocation) =>
+        allocation.type === 'automatic' &&
+        [settings.label, 'Payment method discount'].includes(allocation.title),
+    );
+    const saved = applied ? Number(applied.discountedAmount.amount) : worked;
+    if (!(saved > 0)) return null;
+    return (
+      <s-banner tone="success" heading={`${settings.label}: ${settings.percent}% off`}>
+        <s-stack gap="small-200">
+          <s-text>
+            You saved {money(saved)} by paying with {method}.
+          </s-text>
+          <s-text type="strong">Amount to transfer: {money(total)}</s-text>
+        </s-stack>
+      </s-banner>
+    );
+  }
 
   // Checkout only says what type of method was used, not its name. Bank
   // Deposit and other manual methods are 'manualPayment' ('other' is allowed
@@ -46,17 +79,9 @@ function Extension() {
   const paidManually = selected.some((option) => ['manualPayment', 'other'].includes(option.type));
   if (!paidManually && !inEditor) return null;
 
-  // Like the app's order edit, discount each line separately and round each
-  // line's discount down to the cent, as Shopify does, so the amounts match.
-  const discount = shopify.lines.value.reduce((sum, line) => {
-    const lineTotal = Number(line.cost.totalAmount.amount);
-    return sum + Math.floor(lineTotal * settings.percent + 1e-6) / 100;
-  }, 0);
+  // Skipped the pop-up: the app takes the discount off after ordering.
+  const discount = worked;
   if (!(discount > 0)) return null;
-
-  const total = Number(shopify.cost.totalAmount.value.amount);
-  const money = (amount) => shopify.i18n.formatCurrency(amount);
-  const method = settings.gateways?.[0] ?? 'Bank Deposit';
 
   return (
     <s-banner tone="success" heading={`${settings.label}: ${settings.percent}% off`}>
