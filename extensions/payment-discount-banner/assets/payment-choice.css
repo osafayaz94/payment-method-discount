@@ -50,6 +50,14 @@
   color: #555;
 }
 
+.pc-total__amount {
+  display: inline-block;
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #1a1a1a;
+  vertical-align: baseline;
+}
+
 .pc-options {
   display: grid;
   gap: 8px;

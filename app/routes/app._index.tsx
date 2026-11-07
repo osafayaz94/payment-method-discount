@@ -497,7 +497,7 @@ function PopUpRow({ on, href }: { on: boolean | undefined; href: string }) {
         </div>
         <Thumbnail
           src="/guide/popup.png"
-          alt="The pop-up: bank transfer and card save 5%, cash on delivery is full price"
+          alt="The pop-up: bank transfer saves 5%, card and cash on delivery are full price"
         />
       </div>
     </s-box>

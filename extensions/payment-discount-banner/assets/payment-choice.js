@@ -168,7 +168,16 @@
     if (known && text.total) {
       total = document.createElement('p');
       total.className = 'pc-total';
-      total.textContent = text.total.replace('[amount]', formatMoney(totalCents));
+      // The amount itself stands out: "Order total: Rs.24,999.00".
+      var parts = text.total.split('[amount]');
+      total.appendChild(document.createTextNode(parts[0]));
+      if (parts.length > 1) {
+        var amountElement = document.createElement('strong');
+        amountElement.className = 'pc-total__amount';
+        amountElement.textContent = formatMoney(totalCents);
+        total.appendChild(amountElement);
+        total.appendChild(document.createTextNode(parts.slice(1).join('[amount]')));
+      }
     }
 
     var form = document.createElement('form');

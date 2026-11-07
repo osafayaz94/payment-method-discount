@@ -116,7 +116,7 @@ export default function Guide() {
         </>
       ),
       image: "popup",
-      alt: "The pop-up on a product page: bank transfer and card save 5%, cash on delivery is full price",
+      alt: "The pop-up on a product page: bank transfer saves 5%, card and cash on delivery are full price",
     },
     {
       title: "Show the saving on product and cart pages",
