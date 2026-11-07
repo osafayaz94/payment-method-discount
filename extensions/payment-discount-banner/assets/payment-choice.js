@@ -14,7 +14,7 @@
   } catch (error) {
     return;
   }
-  // Own wording is part of the Pro and Advanced plans; otherwise the standard
+  // Own wording is part of the Unlimited plan; otherwise the standard
   // wording, the same as the embed's defaults.
   var STANDARD_TEXT = {
     heading: 'How would you like to pay?',

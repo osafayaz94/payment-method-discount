@@ -15,9 +15,11 @@ import { parseGateways, type DiscountSettings } from "../discount";
 import { loadBase, loadOrders, saveAndPublish } from "../admin.server";
 import {
   getCheckoutStatus,
+  getShopInfo,
   setCombinations,
   type Combinations,
 } from "../settings.server";
+import { getRenewal } from "../billing.server";
 import {
   CheckoutPreview,
   EnableMethodsFirst,
@@ -34,13 +36,27 @@ const DEFAULT_COMBINATIONS: Combinations = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const base = await loadBase(request);
-  const [{ seenGateways }, checkout] = await Promise.all([
+  const [{ seenGateways }, checkout, info] = await Promise.all([
     loadOrders(base.graphql, { first: 1 }),
     getCheckoutStatus(base.graphql, base.shop),
+    getShopInfo(base.graphql),
   ]);
+  const renewal =
+    base.plan.key === "unlimited" ? await getRenewal(info.id) : null;
   return {
     settings: base.settings,
     plan: base.plan,
+    plansUrl: base.plansUrl,
+    renewal: renewal && {
+      ...renewal,
+      periodEndsText: renewal.periodEnds
+        ? new Date(renewal.periodEnds).toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })
+        : null,
+    },
     seenGateways,
     discountLive:
       Boolean(checkout.discount?.active) &&
@@ -128,8 +144,15 @@ export const action = async ({
 };
 
 export default function Settings() {
-  const { settings, plan, seenGateways, discountLive, combinesWith } =
-    useLoaderData<typeof loader>();
+  const {
+    settings,
+    plan,
+    plansUrl,
+    renewal,
+    seenGateways,
+    discountLive,
+    combinesWith,
+  } = useLoaderData<typeof loader>();
   const result = useActionData<typeof action>();
   const errors = result?.errors;
   const saving = useNavigation().state === "submitting";
@@ -224,7 +247,7 @@ export default function Settings() {
                   label="Credit or debit card"
                   details={
                     !plan.cardDiscount
-                      ? "Available on the Pro and Advanced plans."
+                      ? "Available on the Unlimited plan."
                       : hasCard
                         ? `For ${settings.cardGateways.join(", ")}. The card is charged the lower amount.`
                         : "First enable a card payment method in Shopify and add it in step 2."
@@ -402,7 +425,98 @@ export default function Settings() {
           </StepCard>
         </s-stack>
       </Form>
+
+      <AutoRenewal plan={plan} renewal={renewal} plansUrl={plansUrl} />
     </s-page>
+  );
+}
+
+// Shopify renews paid plans itself; apps can't cancel or restart a
+// merchant's subscription. So this shows whether the plan renews (on by
+// default) and sends the merchant to Shopify's plan page to change it.
+function AutoRenewal({
+  plan,
+  renewal,
+  plansUrl,
+}: {
+  plan: { key: string; name: string; billing: boolean };
+  renewal: {
+    autoRenews: boolean;
+    periodEndsText: string | null;
+    billingPeriod: string | null;
+  } | null;
+  plansUrl: string;
+}) {
+  const period = renewal?.billingPeriod === "ANNUAL" ? "year" : "month";
+  const date = renewal?.periodEndsText;
+  const paid = plan.billing && plan.key === "unlimited";
+  return (
+    <s-section heading="Subscription">
+      <s-box padding="base" borderWidth="base" borderRadius="base">
+        <s-stack direction="block" gap="small-200">
+          <s-stack direction="inline" gap="small-200" alignItems="center">
+            <s-text type="strong">Auto-renewal</s-text>
+            {paid && (
+              <s-badge
+                tone={renewal?.autoRenews === false ? "warning" : "success"}
+              >
+                {renewal?.autoRenews === false ? "Off" : "On"}
+              </s-badge>
+            )}
+          </s-stack>
+          {!plan.billing ? (
+            <s-text color="subdued">
+              Billing isn&apos;t connected yet, so there&apos;s nothing to
+              renew.
+            </s-text>
+          ) : !paid ? (
+            <>
+              <s-text color="subdued">
+                You&apos;re on the Free plan, so there&apos;s nothing to renew:
+                your 10 discounted orders start again on the 1st of each month.
+                The Unlimited plan renews automatically, so discounts never
+                stop.
+              </s-text>
+              <s-stack direction="inline" gap="base">
+                <s-button href={plansUrl} target="_top">
+                  See plans
+                </s-button>
+              </s-stack>
+            </>
+          ) : renewal?.autoRenews === false ? (
+            <>
+              <s-text color="subdued">
+                Your Unlimited plan won&apos;t renew
+                {date ? ` and ends on ${date}` : ""}. After that you&apos;re on
+                the Free plan: 10 discounted orders a month, bank transfer only.
+              </s-text>
+              <s-stack direction="inline" gap="base">
+                <s-button href={plansUrl} target="_top" variant="primary">
+                  Turn auto-renewal back on
+                </s-button>
+              </s-stack>
+            </>
+          ) : (
+            <>
+              <s-text color="subdued">
+                Your Unlimited plan renews automatically every {period}
+                {date ? `, next on ${date}` : ""}, so discounts never stop.
+                Shopify bills it on your store&apos;s invoice.
+              </s-text>
+              <s-text color="subdued">
+                To turn it off, choose Free on Shopify&apos;s plan page. Shopify
+                shows when the change takes effect.
+              </s-text>
+              <s-stack direction="inline" gap="base">
+                <s-button href={plansUrl} target="_top">
+                  Turn off auto-renewal
+                </s-button>
+              </s-stack>
+            </>
+          )}
+        </s-stack>
+      </s-box>
+    </s-section>
   );
 }
 

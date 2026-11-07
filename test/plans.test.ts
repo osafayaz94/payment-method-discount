@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PLANS, limitReason, monthIn, planFromSubscription } from "../app/plans.ts";
+import { PLANS, limitReason, monthIn, planByKey, planFromSubscription } from "../app/plans.ts";
 
 test("no subscription is the Free plan", () => {
   assert.equal(planFromSubscription(null).key, "free");
@@ -10,28 +10,29 @@ test("a free subscription is the Free plan", () => {
   assert.equal(planFromSubscription({ items: [{ handle: "free", price: { amount: "0.0" } }] }).key, "free");
 });
 
-test("plans are told apart by handle, monthly or yearly", () => {
-  assert.equal(planFromSubscription({ items: [{ handle: "pro", price: { amount: "4.99" } }] }).key, "pro");
-  assert.equal(planFromSubscription({ items: [{ handle: "Pro-Yearly", price: { amount: "45.0" } }] }).key, "pro");
-  assert.equal(planFromSubscription({ items: [{ handle: "advanced", price: { amount: "9.99" } }] }).key, "advanced");
-  assert.equal(planFromSubscription({ items: [{ handle: "advanced_yearly", price: { amount: "90.0" } }] }).key, "advanced");
+test("any paid plan is Unlimited, monthly or yearly, whatever its name", () => {
+  assert.equal(planFromSubscription({ items: [{ handle: "unlimited", price: { amount: "6.99" } }] }).key, "unlimited");
+  assert.equal(planFromSubscription({ items: [{ handle: "unlimited-yearly", price: { amount: "69.0" } }] }).key, "unlimited");
+  assert.equal(planFromSubscription({ items: [{ handle: "renamed", price: { amount: "6.99" } }] }).key, "unlimited");
 });
 
-test("a paid plan with another handle is never limited", () => {
-  assert.equal(planFromSubscription({ items: [{ handle: "products", price: { amount: "9.99" } }] }).key, "advanced");
+test("plans saved by the earlier version are read as Unlimited", () => {
+  assert.equal(planByKey("pro").key, "unlimited");
+  assert.equal(planByKey("advanced").key, "unlimited");
+  assert.equal(planByKey("unlimited").key, "unlimited");
+  assert.equal(planByKey("free").key, "free");
+  assert.equal(planByKey(undefined).key, "free");
 });
 
-test("limits: Free 10, Pro 30, Advanced none", () => {
+test("limits: Free 10, Unlimited none", () => {
   assert.equal(limitReason(PLANS.free, 9), null);
   assert.equal(limitReason(PLANS.free, 10), "Free plan limit of 10 discounted orders this month reached");
-  assert.equal(limitReason(PLANS.pro, 29), null);
-  assert.match(limitReason(PLANS.pro, 30)!, /Pro plan limit of 30/);
-  assert.equal(limitReason(PLANS.advanced, 100000), null);
+  assert.equal(limitReason(PLANS.unlimited, 100000), null);
 });
 
-test("card discounts and own wording are for paid plans", () => {
-  assert.deepEqual([PLANS.free.cardDiscount, PLANS.pro.cardDiscount, PLANS.advanced.cardDiscount], [false, true, true]);
-  assert.deepEqual([PLANS.free.customize, PLANS.pro.customize, PLANS.advanced.customize], [false, true, true]);
+test("card discounts and own wording are on Unlimited only", () => {
+  assert.deepEqual([PLANS.free.cardDiscount, PLANS.unlimited.cardDiscount], [false, true]);
+  assert.deepEqual([PLANS.free.customize, PLANS.unlimited.customize], [false, true]);
 });
 
 test("the month is the store's own", () => {

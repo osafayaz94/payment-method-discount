@@ -93,7 +93,7 @@ export const action = async ({
   if (field === "cardDiscount" && on && !base.plan.cardDiscount) {
     return {
       ok: false,
-      message: "Card discounts are on the Pro and Advanced plans",
+      message: "Card discounts are on the Unlimited plan",
     };
   }
   const bankLive = settings.bankDiscount && settings.gateways.length > 0;
@@ -308,7 +308,7 @@ export default function Home() {
               label="Credit or debit card"
               details={
                 !plan.cardDiscount
-                  ? "Available on the Pro and Advanced plans."
+                  ? "Available on the Unlimited plan."
                   : hasCard
                     ? `${settings.percent}% off for ${settings.cardGateways.join(", ")}, when chosen in the pop-up.`
                     : "First enable a card payment method in Shopify and add it in Settings, step 2."

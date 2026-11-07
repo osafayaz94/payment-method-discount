@@ -43,6 +43,8 @@ The app creates the automatic discount and the payment customization the first t
 4. In one order edit, it takes the discount off every unfulfilled item. It then saves the edit and, if turned on, emails the customer the new total.
 5. It tags the order `payment-discount`, so the order is never discounted twice.
 
+Every order paid by bank transfer or card is also tagged with how the customer paid, **Bank transfer** or **Credit/Debit card**, discounted or not: from their choice in the pop-up, or else from the payment method's name (anything that isn't a listed bank transfer or cash on delivery method counts as card). Cash on delivery orders get no payment tag.
+
 Orders paid any other way, such as COD, are not changed.
 
 If an edit fails, nothing is saved, so the order keeps its full price. The order is tagged `payment-discount-failed`. It then shows under **Needs attention** on the app's page, with a **Retry** button.
@@ -70,14 +72,13 @@ Both read the app's settings from metafields that the app writes on install and 
 | Plan | Price | Includes |
 |---|---|---|
 | Free | $0 | Up to 10 discounted orders a month, bank transfer discount, pop-up and banner |
-| Pro | $4.99/month or $45/year | Up to 30 discounted orders a month, card discounts, own wording and colours for the pop-up and banner, priority email support |
-| Advanced | $9.99/month or $90/year | Unlimited discounted orders, everything in Pro |
+| Unlimited | $6.99/month or $69/year | Unlimited discounted orders, bank transfer and card discounts, own wording and colours for the pop-up and banner, priority email support |
 
 Prices, yearly options and trials are set in the Partner Dashboard with [Shopify App Pricing](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing); Shopify hosts the plan selection page and charges the merchant. The app only decides what each plan allows (`app/plans.ts`):
 - **Monthly limit**: every discounted order (pop-up or after-order) counts, per calendar month in the store's time zone. When the limit is reached, the app publishes `pausedMonth` to the settings metafield. The discount function, the payment customization function, the pop-up, the banner and the Thank-you block then stop for the rest of that month, and come back on the 1st by themselves. The after-order fallback skips orders too.
-- **Card discounts** and **own wording and colours** need Pro or Advanced. On Free, the pop-up and banner use the standard wording and colours, whatever is set in the theme editor.
+- **Card discounts** and **own wording and colours** need Unlimited. On Free, the pop-up and banner use the standard wording and colours, whatever is set in the theme editor.
 
-The plan is read from the Partner API's [Active Subscription API](https://shopify.dev/docs/api/partner/latest/active-subscription), at most every 10 minutes per shop, and right away when Shopify sends the merchant back to the app after picking a plan. Plans are told apart by their handle, so name them **Pro** and **Advanced**. A paid plan with any other handle counts as Advanced. If the Partner API can't be reached, the last known plan is used.
+The plan is read from the Partner API's [Active Subscription API](https://shopify.dev/docs/api/partner/latest/active-subscription), at most every 10 minutes per shop, and right away when Shopify sends the merchant back to the app after picking a plan. Any paid plan counts as Unlimited, whatever its name; no subscription, or a free one, is Free. Plans saved by an earlier version (Pro, Advanced) are read as Unlimited. Paid plans renew automatically (Shopify does it); Settings shows whether the plan renews and when, read from the Active Subscription API, with a button to Shopify's plan page to stop or restart it, since apps can't change a merchant's subscription themselves. If the Partner API can't be reached, the last known plan is used.
 
 Without the Partner API settings below, billing is off and every feature is unlocked (for development). The app's page then says so.
 

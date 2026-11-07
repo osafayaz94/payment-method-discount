@@ -63,7 +63,7 @@ test("settings are created with defaults, then updated column by column", async 
     percent: 7.5,
     cardDiscount: true,
     bankDiscount: false,
-    plan: "pro",
+    plan: "unlimited",
     planCheckedAt: checked,
   });
   row = await getSettingsRow(db, "a.myshopify.com");
@@ -72,7 +72,7 @@ test("settings are created with defaults, then updated column by column", async 
   assert.equal(row?.cardDiscount, true);
   assert.equal(row?.bankDiscount, false);
   assert.equal(row?.discountId, "gid://1");
-  assert.equal(row?.plan, "pro");
+  assert.equal(row?.plan, "unlimited");
   assert.equal(row?.planCheckedAt?.getTime(), checked.getTime());
 });
 
@@ -117,7 +117,7 @@ test("shop/redact deletes everything for the shop only", async () => {
   const db = localDb();
   const storage = new D1SessionStorage(() => db);
   for (const shop of ["a.myshopify.com", "b.myshopify.com"]) {
-    await upsertSettings(db, shop, { plan: "pro" });
+    await upsertSettings(db, shop, { plan: "unlimited" });
     await incrementUsage(db, shop, "2026-11");
     await storage.storeSession(
       new Session({ id: `offline_${shop}`, shop, state: "", isOnline: false, accessToken: "t" }),
@@ -127,7 +127,7 @@ test("shop/redact deletes everything for the shop only", async () => {
   assert.equal(await getSettingsRow(db, "a.myshopify.com"), null);
   assert.equal(await getUsage(db, "a.myshopify.com", "2026-11"), 0);
   assert.equal(await storage.loadSession("offline_a.myshopify.com"), undefined);
-  assert.equal((await getSettingsRow(db, "b.myshopify.com"))?.plan, "pro");
+  assert.equal((await getSettingsRow(db, "b.myshopify.com"))?.plan, "unlimited");
   assert.equal(await getUsage(db, "b.myshopify.com", "2026-11"), 1);
   assert.ok(await storage.loadSession("offline_b.myshopify.com"));
 });

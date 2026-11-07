@@ -64,17 +64,15 @@ them in the pricing section.
 
 ## 3. Pricing (Shopify App Pricing)
 
-Create three plans. The app tells them apart by their handle, so the plan
-names must be exactly **Free**, **Pro** and **Advanced**.
+Create two plans. Any paid plan counts as Unlimited in the app, whatever its
+name.
 
 | Plan | Monthly | Yearly | Top features to list |
 |---|---|---|---|
 | Free | $0 | — | Up to 10 discounted orders a month · Bank transfer discount · Payment pop-up and savings banner |
-| Pro | $4.99 | $45 | Up to 30 discounted orders a month · Card discounts · Your own wording and colours · Priority email support |
-| Advanced | $9.99 | $90 | Unlimited discounted orders · Everything in Pro |
+| Unlimited | $6.99 | $69 | Unlimited discounted orders · Bank transfer and card discounts · Your own wording and colours · Priority email support |
 
-A free trial (for example 7 or 14 days) is optional; if you add one, it's
-listed automatically.
+Suggested free trial on Unlimited: 7 days. Paid plans renew automatically.
 
 Welcome link (where Shopify sends merchants after choosing a plan): `/app`
 

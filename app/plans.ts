@@ -2,7 +2,7 @@
 // Partner Dashboard (Shopify App Pricing); this file only decides what each
 // plan allows. Kept free of framework imports so it can be tested.
 
-export type PlanKey = "free" | "pro" | "advanced";
+export type PlanKey = "free" | "unlimited";
 
 export type Plan = {
   key: PlanKey;
@@ -17,35 +17,58 @@ export type Plan = {
 };
 
 export const PLANS: Record<PlanKey, Plan> = {
-  free: { key: "free", name: "Free", limit: 10, cardDiscount: false, customize: false },
-  pro: { key: "pro", name: "Pro", limit: 30, cardDiscount: true, customize: true },
-  advanced: { key: "advanced", name: "Advanced", limit: null, cardDiscount: true, customize: true },
+  free: {
+    key: "free",
+    name: "Free",
+    limit: 10,
+    cardDiscount: false,
+    customize: false,
+  },
+  unlimited: {
+    key: "unlimited",
+    name: "Unlimited",
+    limit: null,
+    cardDiscount: true,
+    customize: true,
+  },
 };
+
+// A plan saved by an earlier version of the app (when there were Pro and
+// Advanced plans), or any unknown name, read as today's plan.
+export function planByKey(key: string | null | undefined): Plan {
+  if (key === "unlimited" || key === "pro" || key === "advanced")
+    return PLANS.unlimited;
+  return PLANS.free;
+}
 
 // The Partner API's activeSubscription, only the parts used here.
 export type ActiveSubscription = {
-  items?: {
-    handle?: string | null;
-    price?: { amount?: string | number | null } | null;
-  }[] | null;
+  items?:
+    | {
+        handle?: string | null;
+        price?: { amount?: string | number | null } | null;
+      }[]
+    | null;
 } | null;
 
-// Works out the plan from the shop's subscription. Plans are told apart by
-// their handle, so name them "Pro" and "Advanced" in the Partner Dashboard.
-// A paid plan with any other handle counts as Advanced, so a paying merchant
-// is never limited by a renamed plan.
+// Works out the plan from the shop's subscription: any paid plan is
+// Unlimited, whatever its name, so a paying merchant is never limited by a
+// renamed plan. No subscription, or a free one, is Free.
 export function planFromSubscription(subscription: ActiveSubscription): Plan {
   const items = subscription?.items ?? [];
-  const handles = items.map((item) => (item.handle ?? "").toLowerCase()).join(" ");
-  if (handles.includes("advanced")) return PLANS.advanced;
-  if (/\bpro\b/.test(handles.replace(/[-_]/g, " "))) return PLANS.pro;
+  const handles = items
+    .map((item) => (item.handle ?? "").toLowerCase())
+    .join(" ");
   const paid = items.some((item) => Number(item.price?.amount ?? 0) > 0);
-  return paid ? PLANS.advanced : PLANS.free;
+  return paid || handles.includes("unlimited") ? PLANS.unlimited : PLANS.free;
 }
 
 // "2026-10" for the given moment in the store's time zone, the same month the
 // functions (shop.localTime) and the theme ('now' | date) see.
-export function monthIn(timeZone: string | null | undefined, at = new Date()): string {
+export function monthIn(
+  timeZone: string | null | undefined,
+  at = new Date(),
+): string {
   try {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: timeZone || "UTC",

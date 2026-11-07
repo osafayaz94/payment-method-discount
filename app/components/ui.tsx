@@ -443,7 +443,7 @@ export function Ring({
   );
 }
 
-// The monthly allowance, with an upgrade offer on the Free and Pro plans.
+// The monthly allowance, with an upgrade offer on the Free plan.
 export function UsageCard({
   plan,
   used,
@@ -488,7 +488,7 @@ export function UsageCard({
     );
   }
 
-  const next = plan.key === "free" ? "Pro" : "Advanced";
+  const next = "Unlimited";
   const near = !paused && used >= plan.limit * 0.8;
   const color = paused ? BRAND.coral : near ? BRAND.amber : BRAND.accent;
   const message = paused
@@ -524,9 +524,8 @@ export function UsageCard({
           {message}
         </div>
         <div style={{ marginTop: 4, opacity: 0.75, fontSize: 13 }}>
-          {next === "Pro"
-            ? "Pro: 30 discounted orders a month, card discounts, your own wording and colours."
-            : "Advanced: no monthly limit."}
+          Unlimited: no monthly limit, card discounts, and your own wording and
+          colours.
         </div>
       </div>
       <s-button variant="primary" href={plansUrl} target="_top">

@@ -9,8 +9,7 @@ import { BRAND, UsageCard } from "../components/ui";
 // Partner Dashboard (Shopify App Pricing): keep the two the same.
 const PRICES: Record<PlanKey, { monthly: string; yearly?: string }> = {
   free: { monthly: "$0" },
-  pro: { monthly: "$4.99", yearly: "$45" },
-  advanced: { monthly: "$9.99", yearly: "$90" },
+  unlimited: { monthly: "$6.99", yearly: "$69" },
 };
 const FEATURES: Record<PlanKey, string[]> = {
   free: [
@@ -18,13 +17,12 @@ const FEATURES: Record<PlanKey, string[]> = {
     "Bank transfer discount",
     "Payment pop-up and savings banner",
   ],
-  pro: [
-    "Up to 30 discounted orders a month",
-    "Card discounts",
+  unlimited: [
+    "Unlimited discounted orders",
+    "Bank transfer and card discounts",
     "Your own wording and colours",
     "Priority email support",
   ],
-  advanced: ["Unlimited discounted orders", "Everything in Pro"],
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -41,7 +39,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function Plans() {
   const { plan, used, paused, nextMonth, plansUrl } =
     useLoaderData<typeof loader>();
-  const keys: PlanKey[] = ["free", "pro", "advanced"];
+  const keys: PlanKey[] = ["free", "unlimited"];
 
   return (
     <s-page heading="Plans & pricing">
@@ -60,7 +58,7 @@ export default function Plans() {
             Yearly billing costs less than paying monthly. You can change or
             cancel your plan at any time.
           </s-paragraph>
-          <s-grid gridTemplateColumns="1fr 1fr 1fr" gap="base">
+          <s-grid gridTemplateColumns="1fr 1fr" gap="base">
             {keys.map((key) => {
               const current = plan.billing && plan.key === key;
               return (
@@ -73,7 +71,7 @@ export default function Plans() {
                     display: "flex",
                     flexDirection: "column",
                     gap: 8,
-                    background: key === "pro" ? BRAND.softer : "#fff",
+                    background: key === "unlimited" ? BRAND.softer : "#fff",
                   }}
                 >
                   <s-stack
@@ -83,8 +81,8 @@ export default function Plans() {
                   >
                     <s-heading>{PLANS[key].name}</s-heading>
                     {current && <s-badge tone="success">Your plan</s-badge>}
-                    {!current && key === "pro" && (
-                      <s-badge tone="info">Most popular</s-badge>
+                    {!current && key === "unlimited" && (
+                      <s-badge tone="info">Recommended</s-badge>
                     )}
                   </s-stack>
                   <div
@@ -111,7 +109,7 @@ export default function Plans() {
                       <s-button
                         href={plansUrl}
                         target="_top"
-                        variant={key === "pro" ? "primary" : "secondary"}
+                        variant={key === "unlimited" ? "primary" : "secondary"}
                       >
                         {`Choose ${PLANS[key].name}`}
                       </s-button>

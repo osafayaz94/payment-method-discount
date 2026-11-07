@@ -51,6 +51,33 @@ export const CHOICE_ATTRIBUTE = "_payment_choice";
 export const APPLIED_TAG = "payment-discount";
 export const FAILED_TAG = "payment-discount-failed";
 
+// Tags for how the customer paid, so merchants can filter orders by it.
+export const PAYMENT_TAGS = {
+  bank: "Bank transfer",
+  card: "Credit/Debit card",
+} as const;
+
+const normalize = (name: string) => name.trim().toLowerCase();
+
+// How the customer paid: their choice in the pop-up, or else the payment
+// method's name. Like checkout, any method that isn't bank transfer or cash
+// on delivery counts as card. Null when the order has no payment method.
+export function paymentKind(
+  order: OrderForDiscount,
+  settings: DiscountSettings,
+): "bank" | "card" | "cod" | null {
+  const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
+  if (choice === "bank" || choice === "card" || choice === "cod") return choice;
+  const used = (order.paymentGatewayNames ?? []).map(normalize);
+  if (!used.length) return null;
+  const listed = (names: string[]) => used.some((g) => names.map(normalize).includes(g));
+  if (listed(settings.gateways)) return "bank";
+  if (listed(settings.codGateways) || used.some((g) => /cash|\bcod\b|delivery/.test(g))) {
+    return "cod";
+  }
+  return "card";
+}
+
 const ORDER_QUERY = `#graphql
   query OrderForDiscount($id: ID!) {
     order(id: $id) {
@@ -159,26 +186,43 @@ export async function applyDiscount(
   // checkout from the discount function; tag the discounted ones so they are
   // listed with the rest, and never edit them. Once the month's limit is
   // reached the discount function stops too, so those orders got nothing.
-  const choice = order?.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
-  if (order && choice) {
+  if (!order) return { applied: false, reason: "order not found" };
+
+  // Every bank transfer and card order is tagged with how it was paid,
+  // discounted or not; tags are added once, together with any others.
+  const kind = paymentKind(order, settings);
+  const kindTag = kind === "bank" || kind === "card" ? PAYMENT_TAGS[kind] : null;
+  const has = new Set(order.tags.map((t) => t.toLowerCase()));
+  const addMissing = async (tags: (string | null)[]) => {
+    const missing = tags.filter((t): t is string => Boolean(t) && !has.has(t!.toLowerCase()));
+    if (missing.length) await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, missing);
+  };
+
+  const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
+  if (choice) {
     const discounted =
       settings.enabled &&
       !limit &&
       ((choice === "bank" && settings.bankDiscount) ||
         (choice === "card" && settings.cardDiscount));
     if (!discounted) {
+      await addMissing([kindTag]);
       return { applied: false, reason: "payment method chosen before checkout, no discount" };
     }
     const reason = "payment method chosen before checkout, discount given there";
-    if (order.tags.map((t) => t.toLowerCase()).includes(APPLIED_TAG)) {
+    if (has.has(APPLIED_TAG)) {
+      await addMissing([kindTag]);
       return { applied: false, reason };
     }
-    await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, [APPLIED_TAG]);
+    await addMissing([APPLIED_TAG, kindTag]);
     return { applied: false, reason, discountedAtCheckout: true };
   }
 
   const reason = skipReason(order, settings) ?? limit;
-  if (reason || !order) return { applied: false, reason: reason ?? "order not found" };
+  if (reason) {
+    await addMissing([kindTag]);
+    return { applied: false, reason };
+  }
 
   try {
     const begin = (await graphql(BEGIN_EDIT, { id: order.id })).orderEditBegin;
@@ -211,7 +255,7 @@ export async function applyDiscount(
     ).orderEditCommit;
     assertNoUserErrors("orderEditCommit", commit);
 
-    await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, [APPLIED_TAG]);
+    await addMissing([APPLIED_TAG, kindTag]);
     if (order.tags.includes(FAILED_TAG)) {
       await changeTags(graphql, REMOVE_TAGS, "tagsRemove", order.id, [FAILED_TAG]);
     }
