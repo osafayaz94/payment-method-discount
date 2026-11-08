@@ -6,7 +6,7 @@ order the form asks for it. Lengths are checked against Shopify's limits.
 Images (in the session's scratchpad, to upload):
 
 - `app-icon-1200.png`: app icon, 1200 x 1200
-- `screenshot-1-popup.png` … `screenshot-4-orders.png`: screenshots, 1600 x 900
+- `screenshot-1-popup.png` … `screenshot-5-guide.png`: screenshots, 1600 x 900
 
 ## 1. App settings
 
@@ -55,9 +55,10 @@ Images (in the session's scratchpad, to upload):
 **Screenshot alt text**
 
 1. Pop-up asking the customer to choose bank transfer, card or cash on delivery, with the amount to pay for each
-2. The app's setup checklist with every step ticked
-3. Discount settings with a live preview of the pop-up and checkout
-4. List of discounted orders and a form to apply the discount to a missed order
+2. The app's Home page: discount percentage, main switch and who gets the discount
+3. What shows in the store: payment pop-up, savings banner and Thank-you page amount, each with a picture
+4. Settings in three steps: choose the discount and sort the store's payment methods
+5. Step-by-step setup guide with pictures of each Shopify screen
 
 Don't put prices in images, the icon or the text above: Shopify only allows
 them in the pricing section.
