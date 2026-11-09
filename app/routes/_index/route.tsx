@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, Form, useLoaderData } from "react-router";
+import { useEffect } from "react";
+import { redirect, Form, useLoaderData, useNavigate } from "react-router";
 
 import { login } from "../../shopify.server";
 
@@ -8,8 +9,10 @@ import styles from "./styles.module.css";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
 
-  // Opened from inside the Shopify admin (including Shopify's plan page,
-  // which adds plan_handle): go straight to the app.
+  // Opened from inside the Shopify admin: go straight to the app. A first
+  // load carries the shop (or plan_handle from Shopify's plan page); a
+  // navigation inside the app, such as clicking the app's name in the admin
+  // title bar, carries App Bridge's session token instead.
   const fromAdmin = [
     "shop",
     "host",
@@ -17,7 +20,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     "id_token",
     "plan_handle",
   ].some((key) => url.searchParams.has(key));
-  if (fromAdmin) {
+  if (
+    fromAdmin ||
+    request.headers.get("authorization")?.startsWith("Bearer ")
+  ) {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
@@ -26,6 +32,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function App() {
   const { showForm } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+
+  // Shown inside the Shopify admin's frame: this page is for logging in from
+  // outside Shopify, so open the app's Home instead.
+  useEffect(() => {
+    if (window.top !== window.self) navigate("/app", { replace: true });
+  }, [navigate]);
 
   return (
     <div className={styles.index}>
