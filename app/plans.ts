@@ -21,7 +21,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     key: "free",
     name: "Free",
     limit: 10,
-    cardDiscount: false,
+    cardDiscount: true,
     customize: false,
   },
   unlimited: {

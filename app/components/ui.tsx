@@ -524,8 +524,7 @@ export function UsageCard({
           {message}
         </div>
         <div style={{ marginTop: 4, opacity: 0.75, fontSize: 13 }}>
-          Unlimited: no monthly limit, card discounts, and your own wording and
-          colours.
+          Unlimited: no monthly limit, and your own wording and colours.
         </div>
       </div>
       <s-button variant="primary" href={plansUrl} target="_top">

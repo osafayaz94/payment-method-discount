@@ -14,7 +14,7 @@ const PRICES: Record<PlanKey, { monthly: string; yearly?: string }> = {
 const FEATURES: Record<PlanKey, string[]> = {
   free: [
     "Up to 10 discounted orders a month",
-    "Bank transfer discount",
+    "Bank transfer and card discounts",
     "Payment pop-up and savings banner",
   ],
   unlimited: [

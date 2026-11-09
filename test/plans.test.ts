@@ -30,8 +30,8 @@ test("limits: Free 10, Unlimited none", () => {
   assert.equal(limitReason(PLANS.unlimited, 100000), null);
 });
 
-test("card discounts and own wording are on Unlimited only", () => {
-  assert.deepEqual([PLANS.free.cardDiscount, PLANS.unlimited.cardDiscount], [false, true]);
+test("card discounts are on every plan; own wording is on Unlimited only", () => {
+  assert.deepEqual([PLANS.free.cardDiscount, PLANS.unlimited.cardDiscount], [true, true]);
   assert.deepEqual([PLANS.free.customize, PLANS.unlimited.customize], [false, true]);
 });
 

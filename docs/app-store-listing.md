@@ -70,7 +70,7 @@ name.
 
 | Plan | Monthly | Yearly | Top features to list |
 |---|---|---|---|
-| Free | $0 | — | Up to 10 discounted orders a month · Bank transfer discount · Payment pop-up and savings banner |
+| Free | $0 | — | Up to 10 discounted orders a month · Bank transfer and card discounts · Payment pop-up and savings banner |
 | Unlimited | $4.99 | $49 | Unlimited discounted orders · Bank transfer and card discounts · Your own wording and colours · Priority email support |
 
 No free trial (the Free plan lets merchants try the app). Paid plans renew automatically.
