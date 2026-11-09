@@ -13,6 +13,8 @@
   "observability": { "enabled": true },
   // Keep variables added in the dashboard on each deploy.
   "keep_vars": true,
+  // These vars are set on every deploy from GitHub; change them here, not in
+  // the Cloudflare dashboard. SHOPIFY_API_KEY is the app's Client ID.
   "vars": {
     "SHOPIFY_API_KEY": "e51d1ea6a855ffacddfdaa9c8550e3e4",
     "SCOPES": "read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations",
