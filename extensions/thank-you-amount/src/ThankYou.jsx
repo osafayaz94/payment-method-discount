@@ -19,7 +19,7 @@ function Extension() {
   if (!settings) {
     return inEditor ? (
       <s-banner tone="warning" heading="Payment discount amount">
-        <s-text>Settings not found. Open the Payment Method Discount app and click Save.</s-text>
+        <s-text>Settings not found. Open the Nexora app and click Save in Settings.</s-text>
       </s-banner>
     ) : null;
   }

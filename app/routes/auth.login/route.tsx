@@ -1,6 +1,5 @@
-import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Form, useActionData, useLoaderData } from "react-router";
+import { useActionData, useLoaderData } from "react-router";
 
 import { login } from "../../shopify.server";
 import { loginErrorMessage } from "./error.server";
@@ -19,30 +18,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   };
 };
 
+// Installs and logins start from Shopify (the App Store or the admin), so
+// there is no form to type a shop address into.
 export default function Auth() {
   const loaderData = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const [shop, setShop] = useState("");
   const { errors } = actionData || loaderData;
 
   return (
     <>
       <script src="https://cdn.shopify.com/shopifycloud/polaris.js" />
       <s-page>
-        <Form method="post">
-        <s-section heading="Log in">
-          <s-text-field
-            name="shop"
-            label="Shop domain"
-            details="example.myshopify.com"
-            value={shop}
-            onChange={(e) => setShop(e.currentTarget.value)}
-            autocomplete="on"
-            error={errors.shop}
-          ></s-text-field>
-          <s-button type="submit">Log in</s-button>
+        <s-section heading="Nexora: Bank Transfer Discount">
+          <s-stack direction="block" gap="base">
+            {errors.shop && <s-banner tone="critical">{errors.shop}</s-banner>}
+            <s-paragraph>
+              To use the app, install it from the Shopify App Store, or open it
+              from Apps in your Shopify admin.
+            </s-paragraph>
+          </s-stack>
         </s-section>
-        </Form>
       </s-page>
     </>
   );

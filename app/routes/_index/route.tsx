@@ -1,8 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { useEffect } from "react";
-import { redirect, Form, useLoaderData, useNavigate } from "react-router";
-
-import { login } from "../../shopify.server";
+import { redirect, useNavigate } from "react-router";
 
 import styles from "./styles.module.css";
 
@@ -27,11 +25,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
-  return { showForm: Boolean(login) };
+  return null;
 };
 
 export default function App() {
-  const { showForm } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   // Shown inside the Shopify admin's frame: this page is for logging in from
@@ -48,26 +45,18 @@ export default function App() {
           Give customers a discount for paying upfront by bank transfer or card,
           instead of cash on delivery.
         </p>
-        {showForm && (
-          <Form className={styles.form} method="post" action="/auth/login">
-            <label className={styles.label}>
-              <span>Shop domain</span>
-              <input className={styles.input} type="text" name="shop" />
-              <span>e.g: my-shop-domain.myshopify.com</span>
-            </label>
-            <button className={styles.button} type="submit">
-              Log in
-            </button>
-          </Form>
-        )}
+        <p className={styles.text}>
+          To use the app, install it from the Shopify App Store, or open it from
+          Apps in your Shopify admin.
+        </p>
         <ul className={styles.list}>
           <li>
-            <strong>Automatic</strong>. Orders paid with the payment methods you
-            choose get your discount as soon as they are placed.
+            <strong>A choice before checkout</strong>. A pop-up shows customers
+            what they pay with each payment method.
           </li>
           <li>
-            <strong>Safe</strong>. Cash on delivery, paid and cancelled orders
-            are never changed, and no order is discounted twice.
+            <strong>Discount at checkout</strong>. Bank transfer and card get
+            your discount; cash on delivery pays full price.
           </li>
           <li>
             <strong>Works on every plan</strong>. No Shopify Plus needed.
