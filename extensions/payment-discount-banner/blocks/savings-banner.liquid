@@ -65,14 +65,14 @@
     </div>
     {%- if request.design_mode and discount.customize != true -%}
       <p style="margin: -6px 0 12px; font-size: 0.85em; opacity: 0.7;">
-        Only you see this: your own wording and colours need the Unlimited plan of Nexora: Payment Discounts.
+        Only you see this: your own wording and colours need the Unlimited plan of Nexora: Bank Transfer Discount.
       </p>
     {%- endif -%}
   {%- endif -%}
 {%- elsif request.design_mode -%}
   <div style="padding: 12px 16px; border: 1px dashed #999; border-radius: 8px; margin: 12px 0;" {{ block.shopify_attributes }}>
     {%- if switched_off -%}
-      Payment discount banner: switched off in the Payment Discounts app. Turn it on there to show it.
+      Payment discount banner: switched off in the Bank Transfer Discount app. Turn it on there to show it.
     {%- elsif paused -%}
       Payment discount banner: hidden until next month, because this month's discounted orders on your plan are used up. Upgrade in the Payment Method Discount app to show it again.
     {%- else -%}

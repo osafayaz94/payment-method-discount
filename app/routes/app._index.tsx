@@ -208,7 +208,7 @@ export default function Home() {
   const doneCount = steps.filter((step) => step.done).length;
 
   return (
-    <s-page heading="Nexora: Payment Discounts">
+    <s-page heading="Nexora: Bank Transfer Discount">
       <Hero
         percent={settings.percent}
         methods={discountedMethods(settings, plan.cardDiscount)}

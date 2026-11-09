@@ -1,4 +1,4 @@
-# App Store submission: Nexora: Payment Discounts
+# App Store submission: Nexora: Bank Transfer Discount
 
 Everything to paste into the Partner Dashboard app submission form, in the
 order the form asks for it. Lengths are checked against Shopify's limits.
@@ -12,7 +12,7 @@ Images (in the session's scratchpad, to upload):
 
 | Field | Value |
 |---|---|
-| App name | Nexora: Payment Discounts |
+| App name | Nexora: Bank Transfer Discount |
 | App URL | https://payment-method-discount.osafayaz94.workers.dev |
 | Privacy policy URL | https://payment-method-discount.osafayaz94.workers.dev/privacy |
 | Support email | osafayaz94@gmail.com |
@@ -29,9 +29,9 @@ Images (in the session's scratchpad, to upload):
 
 > Discount bank transfer and card payments over cash on delivery, so more orders are paid upfront.
 
-**App details** (483 / 500)
+**App details** (488 / 500)
 
-> Cash on delivery orders cost you when they're refused or never paid. Nexora: Payment Discounts gives customers a reason to pay upfront instead. When they click Check out or Buy it now, a pop-up asks how they'd like to pay and shows the saving for each method. Bank transfer, and card if you turn it on, get your percentage off at checkout; cash on delivery pays full price. Checkout then only offers the method they chose. A guided checklist gets you set up in minutes, with no code.
+> Cash on delivery orders cost you when they're refused or never paid. Nexora: Bank Transfer Discount gives customers a reason to pay upfront instead. When they click Check out or Buy it now, a pop-up asks how they'd like to pay and shows the saving for each method. Bank transfer, and card if you turn it on, get your percentage off at checkout; cash on delivery pays full price. Checkout then only offers the method they chose. A guided checklist gets you set up in minutes, with no code.
 
 **Feature list** (each at most 80 characters)
 

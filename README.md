@@ -1,4 +1,4 @@
-# Nexora: Payment Discounts
+# Nexora: Bank Transfer Discount
 
 A Shopify app that gives customers a discount for choosing a payment method you want to encourage. Example: **5% off when they pick Bank Deposit instead of Cash on Delivery (COD)**.
 
