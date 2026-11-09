@@ -8,7 +8,16 @@ import styles from "./styles.module.css";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
 
-  if (url.searchParams.get("shop")) {
+  // Opened from inside the Shopify admin (including Shopify's plan page,
+  // which adds plan_handle): go straight to the app.
+  const fromAdmin = [
+    "shop",
+    "host",
+    "embedded",
+    "id_token",
+    "plan_handle",
+  ].some((key) => url.searchParams.has(key));
+  if (fromAdmin) {
     throw redirect(`/app?${url.searchParams.toString()}`);
   }
 
@@ -21,9 +30,10 @@ export default function App() {
   return (
     <div className={styles.index}>
       <div className={styles.content}>
-        <h1 className={styles.heading}>Payment Method Discount</h1>
+        <h1 className={styles.heading}>Nexora: Bank Transfer Discount</h1>
         <p className={styles.text}>
-          Reward customers who pay by bank deposit instead of cash on delivery.
+          Give customers a discount for paying upfront by bank transfer or card,
+          instead of cash on delivery.
         </p>
         {showForm && (
           <Form className={styles.form} method="post" action="/auth/login">
@@ -39,8 +49,8 @@ export default function App() {
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Automatic</strong>. Orders paid with the payment methods
-            you choose get your discount as soon as they are placed.
+            <strong>Automatic</strong>. Orders paid with the payment methods you
+            choose get your discount as soon as they are placed.
           </li>
           <li>
             <strong>Safe</strong>. Cash on delivery, paid and cancelled orders
