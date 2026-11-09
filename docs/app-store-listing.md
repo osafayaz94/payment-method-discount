@@ -73,7 +73,7 @@ name.
 | Free | $0 | — | Up to 10 discounted orders a month · Bank transfer discount · Payment pop-up and savings banner |
 | Unlimited | $4.99 | $49 | Unlimited discounted orders · Bank transfer and card discounts · Your own wording and colours · Priority email support |
 
-Suggested free trial on Unlimited: 7 days. Paid plans renew automatically.
+No free trial (the Free plan lets merchants try the app). Paid plans renew automatically.
 
 Welcome link (where Shopify sends merchants after choosing a plan): `/app`
 
