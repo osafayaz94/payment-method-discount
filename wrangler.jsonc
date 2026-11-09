@@ -16,7 +16,11 @@
   "vars": {
     "SHOPIFY_API_KEY": "e51d1ea6a855ffacddfdaa9c8550e3e4",
     "SCOPES": "read_orders,write_orders,write_order_edits,write_discounts,write_payment_customizations",
-    "SHOPIFY_APP_URL": "https://payment-method-discount.osafayaz94.workers.dev"
+    "SHOPIFY_APP_URL": "https://payment-method-discount.osafayaz94.workers.dev",
+    // Billing (Shopify App Pricing, read through the Partner API). The access
+    // token is a secret set in Cloudflare: SHOPIFY_PARTNER_API_ACCESS_TOKEN.
+    "SHOPIFY_PARTNER_ORG_ID": "239524426",
+    "SHOPIFY_APP_GID": "gid://shopify/App/433890066433"
   },
   // Sessions, settings and monthly order counts. The tables are created by
   // the app itself on first use (app/store.ts).
