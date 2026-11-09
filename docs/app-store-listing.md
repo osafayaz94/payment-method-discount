@@ -88,7 +88,7 @@ The app reads each store's plan from the Partner API.
    **Variables and secrets**, add as **Secret**:
    - `SHOPIFY_PARTNER_API_ACCESS_TOKEN`: the token from step 1
    - `SHOPIFY_PARTNER_ORG_ID`: the number in your Partner Dashboard address,
-     probably `239524426` (as in dev.shopify.com/dashboard/239524426/…)
+     the number in the Partner Dashboard address (partners.shopify.com/5238556/apps), not the Dev Dashboard one
    - `SHOPIFY_APP_GID`: `gid://shopify/App/` followed by the number in the
      app's dashboard address, probably `gid://shopify/App/433890066433`
 3. Open the app: the "Billing is not set up" note should be gone.
