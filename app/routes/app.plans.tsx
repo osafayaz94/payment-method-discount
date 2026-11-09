@@ -9,7 +9,7 @@ import { BRAND, UsageCard } from "../components/ui";
 // Partner Dashboard (Shopify App Pricing): keep the two the same.
 const PRICES: Record<PlanKey, { monthly: string; yearly?: string }> = {
   free: { monthly: "$0" },
-  unlimited: { monthly: "$6.99", yearly: "$69" },
+  unlimited: { monthly: "$4.99", yearly: "$49" },
 };
 const FEATURES: Record<PlanKey, string[]> = {
   free: [

@@ -72,7 +72,7 @@ Both read the app's settings from metafields that the app writes on install and 
 | Plan | Price | Includes |
 |---|---|---|
 | Free | $0 | Up to 10 discounted orders a month, bank transfer discount, pop-up and banner |
-| Unlimited | $6.99/month or $69/year | Unlimited discounted orders, bank transfer and card discounts, own wording and colours for the pop-up and banner, priority email support |
+| Unlimited | $4.99/month or $49/year | Unlimited discounted orders, bank transfer and card discounts, own wording and colours for the pop-up and banner, priority email support |
 
 Prices, yearly options and trials are set in the Partner Dashboard with [Shopify App Pricing](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing); Shopify hosts the plan selection page and charges the merchant. The app only decides what each plan allows (`app/plans.ts`):
 - **Monthly limit**: every discounted order (pop-up or after-order) counts, per calendar month in the store's time zone. When the limit is reached, the app publishes `pausedMonth` to the settings metafield. The discount function, the payment customization function, the pop-up, the banner and the Thank-you block then stop for the rest of that month, and come back on the 1st by themselves. The after-order fallback skips orders too.
