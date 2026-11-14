@@ -102,7 +102,7 @@ export const action = async ({
     errors.who = "Turn on bank transfer, card, or both";
   if (bankDiscount && !gateways.length)
     errors.who =
-      "Bank transfer needs a bank transfer method: set one in step 2, or turn bank transfer off";
+      "Turn on Discount for at least one payment method in step 2, or turn bank transfer off";
   if (cardDiscount && !cardGateways.length)
     errors.who =
       "Card needs a card payment method: set one in step 2, or turn card off";
@@ -177,10 +177,16 @@ export default function Settings() {
   );
   // Empties "Add a payment method" after each save, ready for the next one.
   const [addRound, setAddRound] = useState(0);
+  const [addDiscount, setAddDiscount] = useState(true);
+  const [addCard, setAddCard] = useState(false);
   const [lastResult, setLastResult] = useState(result);
   if (result !== lastResult) {
     setLastResult(result);
-    if (result?.ok) setAddRound(addRound + 1);
+    if (result?.ok) {
+      setAddRound(addRound + 1);
+      setAddDiscount(true);
+      setAddCard(false);
+    }
   }
 
   const method = settings.gateways[0] ?? "Bank Deposit";
@@ -202,11 +208,13 @@ export default function Settings() {
         ? "cod"
         : settings.cardGateways.includes(name)
           ? "card"
-          : /cash|\bcod\b|delivery/i.test(name)
-            ? "cod"
-            : /bank|deposit|transfer|easypaisa|jazzcash/i.test(name)
-              ? "bank"
-              : "card";
+          : /card|stripe|paypal|shopify_payments|bogus|payfast|safepay|visa|master/i.test(
+                name,
+              )
+            ? "card"
+            : /\bcod\b|on delivery|cash on|delivery/i.test(name)
+              ? "cod"
+              : "bank";
   // What each method is right now, so its badge follows the dropdown.
   const [kinds, setKinds] = useState<Record<string, string>>({});
   const kindNow = (name: string) => kinds[name] ?? kindOf(name);
@@ -341,34 +349,31 @@ export default function Settings() {
                       </s-button>
                     )}
                   </s-stack>
-                  <s-select
-                    label={`What is ${name}?`}
-                    labelAccessibilityVisibility="exclusive"
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
-                      setKinds((now) => ({ ...now, [name]: value }));
-                    }}
-                  >
-                    <s-option
-                      value="bank"
-                      defaultSelected={kindOf(name) === "bank"}
-                    >
-                      Bank transfer
-                    </s-option>
-                    <s-option
-                      value="card"
-                      defaultSelected={kindOf(name) === "card"}
-                    >
-                      Card
-                    </s-option>
-                    <s-option
-                      value="cod"
-                      defaultSelected={kindOf(name) === "cod"}
-                    >
-                      Cash on delivery
-                    </s-option>
-                    <s-option value="other">Not used</s-option>
-                  </s-select>
+                  {kindOf(name) === "card" ? (
+                    // Card payments are turned on or off for all cards in
+                    // step 1, as the pop-up's Card choice covers them all.
+                    <s-text color="subdued">Card: on or off in step 1</s-text>
+                  ) : (
+                    // On: a pay-upfront method that gets the discount (the
+                    // pop-up's bank transfer choice). Off: full price, offered
+                    // with cash on delivery.
+                    <s-switch
+                      label="Discount"
+                      details={
+                        kindNow(name) === "bank"
+                          ? "On: paying this way gets the discount."
+                          : "Off: full price, like cash on delivery."
+                      }
+                      checked={kindNow(name) === "bank"}
+                      onChange={(event) => {
+                        const on = event.currentTarget.checked;
+                        setKinds((now) => ({
+                          ...now,
+                          [name]: on ? "bank" : "cod",
+                        }));
+                      }}
+                    />
+                  )}
                 </s-grid>
               ))}
               {!methods.length && (
@@ -388,15 +393,37 @@ export default function Settings() {
                 <s-text-field
                   name="newMethodName"
                   label="Add a payment method"
-                  placeholder="For example JazzCash, or Stripe"
+                  placeholder="For example JazzCash or EasyPaisa"
                 />
-                <s-select name="newMethodKind" label="What is it?">
-                  <s-option value="bank" defaultSelected>
-                    Bank transfer
-                  </s-option>
-                  <s-option value="card">Card</s-option>
-                  <s-option value="cod">Cash on delivery</s-option>
-                </s-select>
+                <s-stack direction="block" gap="small-200">
+                  <input
+                    type="hidden"
+                    name="newMethodKind"
+                    value={addCard ? "card" : addDiscount ? "bank" : "cod"}
+                  />
+                  {!addCard && (
+                    <s-switch
+                      label="Discount"
+                      details={
+                        addDiscount
+                          ? "On: paying this way gets the discount."
+                          : "Off: full price, like cash on delivery."
+                      }
+                      checked={addDiscount}
+                      onChange={(event) =>
+                        setAddDiscount(event.currentTarget.checked)
+                      }
+                    />
+                  )}
+                  <s-checkbox
+                    label="This is a card payment"
+                    details="Card payments get the discount when Credit or debit card is on in step 1."
+                    checked={addCard}
+                    onChange={(event) =>
+                      setAddCard(event.currentTarget.checked)
+                    }
+                  />
+                </s-stack>
               </s-grid>
               <s-text color="subdued">
                 Type its name exactly as shown at checkout.
