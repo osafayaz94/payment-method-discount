@@ -143,7 +143,11 @@ export const action = async ({
   }
   return {
     ok: true,
-    message: added.length ? `${added.join(", ")} added` : "Settings saved",
+    message: !added.length
+      ? "Settings saved"
+      : addedKind === "card"
+        ? `${added.join(", ")} added`
+        : `${added.join(", ")} added. Turn on its Discount switch to give it the discount.`,
   };
 };
 
@@ -177,14 +181,12 @@ export default function Settings() {
   );
   // Empties "Add a payment method" after each save, ready for the next one.
   const [addRound, setAddRound] = useState(0);
-  const [addDiscount, setAddDiscount] = useState(true);
   const [addCard, setAddCard] = useState(false);
   const [lastResult, setLastResult] = useState(result);
   if (result !== lastResult) {
     setLastResult(result);
     if (result?.ok) {
       setAddRound(addRound + 1);
-      setAddDiscount(true);
       setAddCard(false);
     }
   }
@@ -414,8 +416,9 @@ export default function Settings() {
                 </s-text>
               )}
             </s-stack>
-            {/* Name and kind side by side, Add below; Add saves the page so
-                the new method joins the list above, then the fields empty. */}
+            {/* Name (and card box) side by side, Add below. Add saves the page:
+                the new method joins the list above at 0% off, with its
+                Discount switch off, and the fields empty for the next one. */}
             <s-stack key={addRound} direction="block" gap="small-200">
               <s-grid
                 gridTemplateColumns="1fr 1fr"
@@ -431,24 +434,8 @@ export default function Settings() {
                   <input
                     type="hidden"
                     name="newMethodKind"
-                    value={addCard ? "card" : addDiscount ? "bank" : "cod"}
+                    value={addCard ? "card" : "cod"}
                   />
-                  {!addCard && (
-                    <s-switch
-                      key={`add-${addRound}-${addDiscount}-${enabled}`}
-                      label="Discount"
-                      details={
-                        addDiscount
-                          ? "On: paying this way gets the discount."
-                          : "Off: full price, like cash on delivery."
-                      }
-                      defaultChecked={enabled && addDiscount}
-                      disabled={!enabled}
-                      onChange={(event) =>
-                        setAddDiscount(event.currentTarget.checked)
-                      }
-                    />
-                  )}
                   <s-checkbox
                     key={`card-${addRound}-${addCard}`}
                     label="This is a card payment"
