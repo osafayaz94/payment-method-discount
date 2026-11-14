@@ -326,31 +326,36 @@ export default function Settings() {
                 </s-text>
               )}
             </s-stack>
-            <s-grid
-              key={addRound}
-              gridTemplateColumns="1fr 1fr auto"
-              gap="base"
-              alignItems="end"
-            >
-              <s-text-field
-                name="newMethodName"
-                label="Add a payment method"
-                placeholder="For example JazzCash, or Stripe"
-                details="Its name exactly as shown at checkout."
-              />
-              <s-select name="newMethodKind" label="What is it?">
-                <s-option value="bank" defaultSelected>
-                  Bank transfer
-                </s-option>
-                <s-option value="card">Card</s-option>
-                <s-option value="cod">Cash on delivery</s-option>
-              </s-select>
-              {/* Saves the page with the new method, which then joins the
-                  list above; the fields empty for the next one. */}
-              <s-button type="submit" {...(saving ? { loading: true } : {})}>
-                Add
-              </s-button>
-            </s-grid>
+            {/* Name and kind side by side, Add below; Add saves the page so
+                the new method joins the list above, then the fields empty. */}
+            <s-stack key={addRound} direction="block" gap="small-200">
+              <s-grid
+                gridTemplateColumns="1fr 1fr"
+                gap="base"
+                alignItems="start"
+              >
+                <s-text-field
+                  name="newMethodName"
+                  label="Add a payment method"
+                  placeholder="For example JazzCash, or Stripe"
+                />
+                <s-select name="newMethodKind" label="What is it?">
+                  <s-option value="bank" defaultSelected>
+                    Bank transfer
+                  </s-option>
+                  <s-option value="card">Card</s-option>
+                  <s-option value="cod">Cash on delivery</s-option>
+                </s-select>
+              </s-grid>
+              <s-text color="subdued">
+                Type its name exactly as shown at checkout.
+              </s-text>
+              <s-stack direction="inline">
+                <s-button type="submit" {...(saving ? { loading: true } : {})}>
+                  Add
+                </s-button>
+              </s-stack>
+            </s-stack>
             <s-stack direction="inline" gap="base">
               <s-button
                 href="shopify://admin/settings/payments"
