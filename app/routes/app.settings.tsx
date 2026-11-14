@@ -243,9 +243,9 @@ export default function Settings() {
       percent > 0 &&
       (kind === "bank" || (kind === "card" && cardOn));
     if (kind === "other") return { tone: "neutral", text: "Not used" };
-    return on
-      ? { tone: "success", text: `${percent}% off` }
-      : { tone: "neutral", text: "0% off" };
+    // Green when customers get it; grey while it's switched off, here or in
+    // step 1.
+    return { tone: on ? "success" : "neutral", text: `${percent || 0}% off` };
   };
 
   return (
