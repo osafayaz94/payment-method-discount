@@ -192,6 +192,10 @@ export default function Settings() {
   const method = settings.gateways[0] ?? "Bank Deposit";
   // Every method the merchant might sort: the ones in the settings and the
   // ones seen on recent orders.
+  // Shopify's Bank Deposit and Cash on Delivery come first, then the rest in
+  // the order they were added (new ones are saved at the end of the list).
+  const builtIn = (name: string) =>
+    /^bank deposit$/i.test(name) ? 0 : /^cash on delivery/i.test(name) ? 1 : 2;
   const methods = [
     ...new Set([
       ...settings.gateways,
@@ -199,7 +203,7 @@ export default function Settings() {
       ...settings.cardGateways,
       ...seenGateways,
     ]),
-  ];
+  ].sort((a, b) => builtIn(a) - builtIn(b));
   // Names seen on orders but not sorted yet are guessed from the name.
   const kindOf = (name: string) =>
     settings.gateways.includes(name)
@@ -219,6 +223,12 @@ export default function Settings() {
   const [kinds, setKinds] = useState<Record<string, string>>({});
   const kindNow = (name: string) => kinds[name] ?? kindOf(name);
   const formRef = useRef<HTMLFormElement>(null);
+  // Only methods the merchant typed in can be removed: not ones seen on
+  // orders, not cash on delivery, and not Shopify's built-in methods.
+  const removable = (name: string) =>
+    !seenGateways.includes(name) &&
+    kindNow(name) !== "cod" &&
+    !/^(bank deposit|cash on delivery \(cod\)|money order)$/i.test(name);
   // Methods typed in by hand (not seen on orders) can be taken off the list:
   // saving them as "Not used" drops them, as they don't come back from orders.
   const remove = (name: string) => {
@@ -339,7 +349,7 @@ export default function Settings() {
                     <s-badge tone={outcome(name).tone as "success" | "neutral"}>
                       {outcome(name).text}
                     </s-badge>
-                    {!seenGateways.includes(name) && (
+                    {removable(name) && (
                       <s-button
                         variant="tertiary"
                         tone="critical"
@@ -358,13 +368,16 @@ export default function Settings() {
                     // pop-up's bank transfer choice). Off: full price, offered
                     // with cash on delivery.
                     <s-switch
+                      // Remount on each change: this React version can't
+                      // switch a web component's checked state off itself.
+                      key={`${name}-${kindNow(name)}`}
                       label="Discount"
                       details={
                         kindNow(name) === "bank"
                           ? "On: paying this way gets the discount."
                           : "Off: full price, like cash on delivery."
                       }
-                      checked={kindNow(name) === "bank"}
+                      defaultChecked={kindNow(name) === "bank"}
                       onChange={(event) => {
                         const on = event.currentTarget.checked;
                         setKinds((now) => ({
@@ -403,22 +416,24 @@ export default function Settings() {
                   />
                   {!addCard && (
                     <s-switch
+                      key={`add-${addRound}-${addDiscount}`}
                       label="Discount"
                       details={
                         addDiscount
                           ? "On: paying this way gets the discount."
                           : "Off: full price, like cash on delivery."
                       }
-                      checked={addDiscount}
+                      defaultChecked={addDiscount}
                       onChange={(event) =>
                         setAddDiscount(event.currentTarget.checked)
                       }
                     />
                   )}
                   <s-checkbox
+                    key={`card-${addRound}-${addCard}`}
                     label="This is a card payment"
                     details="Card payments get the discount when Credit or debit card is on in step 1."
-                    checked={addCard}
+                    defaultChecked={addCard}
                     onChange={(event) =>
                       setAddCard(event.currentTarget.checked)
                     }
