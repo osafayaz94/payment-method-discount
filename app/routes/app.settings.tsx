@@ -295,21 +295,21 @@ export default function Settings() {
       : confirm.action === "percent"
         ? {
             title: `Change the discount to ${percentText} off?`,
-            body: `Customers who pay by a discounted method will get ${percentText} off instead of ${settings.percent}%. This is saved straight away.`,
+            body: `Customers who pay by a discounted method will get ${percentText} off instead of ${settings.percent}%.`,
             button: "Save",
             critical: false,
           }
         : confirm.action === "discountOn"
           ? {
               title: `Turn on ${percentText} off for ${confirm.name}?`,
-              body: `Customers who pay with ${confirm.name} will get ${percentText} off. This is saved straight away.`,
+              body: `Customers who pay with ${confirm.name} will get ${percentText} off.`,
               button: "Turn on",
               critical: false,
             }
           : confirm.action === "discountOff"
             ? {
                 title: `Turn off the discount for ${confirm.name}?`,
-                body: `Customers who pay with ${confirm.name} will pay full price. This is saved straight away.`,
+                body: `Customers who pay with ${confirm.name} will pay full price.`,
                 button: "Turn off",
                 critical: true,
               }

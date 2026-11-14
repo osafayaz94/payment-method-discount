@@ -490,8 +490,7 @@ function PercentBox({ percent }: { percent: number }) {
     <s-box padding="base" borderWidth="base" borderRadius="base">
       <Modal id={PERCENT_MODAL}>
         <p style={{ margin: 0, padding: 16 }}>
-          Customers who pay by a discounted method will get {next}% off. This is
-          saved straight away.
+          Customers who pay by a discounted method will get {next}% off.
         </p>
         <TitleBar title={`Change the discount to ${next}% off?`}>
           <button
