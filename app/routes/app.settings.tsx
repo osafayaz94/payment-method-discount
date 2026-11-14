@@ -286,9 +286,15 @@ export default function Settings() {
     <s-page heading="Settings">
       <Modal id={CONFIRM_MODAL}>
         <p style={{ margin: 0, padding: 16 }}>
-          {confirm?.action === "remove"
-            ? `${confirm.name} will be taken off this list, so the pop-up and checkout won't use it for the discount. It stays in Shopify's payment settings.`
-            : `${confirm?.name ?? ""} will be added at 0% off; turn on its Discount switch to give it the discount. Make sure it's also turned on in Shopify Settings, Payments, with exactly the same name.`}
+          {confirm?.action === "remove" ? (
+            `${confirm.name} will be taken off this list, so the pop-up and checkout won't use it for the discount. It stays in Shopify's payment settings.`
+          ) : (
+            <>
+              {confirm?.name} will be added as a payment method. Make sure
+              it&apos;s also turned <strong>ON</strong> in Shopify Payment
+              settings with exactly the same name.
+            </>
+          )}
         </p>
         <TitleBar
           title={
