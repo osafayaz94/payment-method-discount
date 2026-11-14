@@ -101,8 +101,6 @@ export const action = async ({
   const errors: Record<string, string> = {};
   if (!(percent > 0 && percent <= 100))
     errors.percent = "Enter a number above 0 and up to 100";
-  if (!bankDiscount && !cardDiscount)
-    errors.who = "Turn on bank transfer, card, or both";
   if (bankDiscount && !gateways.length)
     errors.who =
       "Turn on Discount for at least one payment method in step 2, or turn bank transfer off";
@@ -464,13 +462,6 @@ export default function Settings() {
             doneText={`${settings.gateways.length} bank · ${settings.cardGateways.length} card · ${settings.codGateways.length} cash on delivery`}
           >
             <s-stack direction="block" gap="small-200">
-              {(!enabled || !bankOn) && (
-                <s-text tone="caution">
-                  {!enabled
-                    ? "Give the discount is off in step 1, so every method pays full price until you turn it on."
-                    : "Bank transfer is off in step 1, so these methods pay full price until you turn it on."}
-                </s-text>
-              )}
               {methods.map((name) => (
                 <s-grid
                   key={name}
