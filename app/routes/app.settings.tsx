@@ -314,7 +314,7 @@ export default function Settings() {
     const on =
       enabled &&
       percent > 0 &&
-      (kind === "bank" || (kind === "card" && cardOn));
+      ((kind === "bank" && bankOn) || (kind === "card" && cardOn));
     if (kind === "other") return { tone: "neutral", text: "Not used" };
     // Green with the % when customers get it; 0% while it's switched off,
     // here or in step 1.
@@ -487,15 +487,19 @@ export default function Settings() {
                     <s-switch
                       // Remount on each change: this React version can't
                       // switch a web component's checked state off itself.
-                      key={`${name}-${kindNow(name)}-${enabled}-${switchRound}`}
+                      key={`${name}-${kindNow(name)}-${enabled}-${bankOn}-${switchRound}`}
                       label="Discount"
                       details={
                         kindNow(name) === "bank"
                           ? "On: paying this way gets the discount."
                           : "Off: full price, like cash on delivery."
                       }
-                      defaultChecked={enabled && kindNow(name) === "bank"}
-                      disabled={!enabled}
+                      // Locked, and shown off, while step 1 has the discount
+                      // or bank transfer off; the choice is kept for later.
+                      defaultChecked={
+                        enabled && bankOn && kindNow(name) === "bank"
+                      }
+                      disabled={!enabled || !bankOn}
                       onChange={(event) =>
                         ask(
                           event.currentTarget.checked
