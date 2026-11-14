@@ -238,7 +238,10 @@ export default function Settings() {
   // What a customer paying this way gets, with step 1 as it stands.
   const outcome = (name: string) => {
     const kind = kindNow(name);
-    const on = percent > 0 && (kind === "bank" || (kind === "card" && cardOn));
+    const on =
+      enabled &&
+      percent > 0 &&
+      (kind === "bank" || (kind === "card" && cardOn));
     if (kind === "other") return { tone: "neutral", text: "Not used" };
     return on
       ? { tone: "success", text: `${percent}% off` }
@@ -280,20 +283,31 @@ export default function Settings() {
               />
               <s-stack direction="block" gap="small-300">
                 <s-text type="strong">Who gets it</s-text>
+                {/* With the main switch off, the choices below are locked
+                    and shown off, but kept (hidden inputs) for when it's
+                    turned back on. */}
+                {!enabled && bankOn && (
+                  <input type="hidden" name="bankDiscount" value="on" />
+                )}
+                {!enabled && cardOn && (
+                  <input type="hidden" name="cardDiscount" value="on" />
+                )}
                 <s-switch
-                  name="bankDiscount"
+                  key={`bank-${enabled}`}
+                  name={enabled ? "bankDiscount" : undefined}
                   label="Bank transfer"
                   details={
                     hasBank
                       ? `For ${settings.gateways.join(", ")}.`
                       : "First enable a bank transfer method, such as Bank Deposit, in Shopify and add it in step 2."
                   }
-                  defaultChecked={settings.bankDiscount && hasBank}
-                  disabled={!hasBank}
+                  defaultChecked={enabled && bankOn}
+                  disabled={!hasBank || !enabled}
                   onChange={(event) => setBankOn(event.currentTarget.checked)}
                 />
                 <s-switch
-                  name="cardDiscount"
+                  key={`card-${enabled}`}
+                  name={enabled ? "cardDiscount" : undefined}
                   label="Credit or debit card"
                   details={
                     !plan.cardDiscount
@@ -302,10 +316,8 @@ export default function Settings() {
                         ? `For ${settings.cardGateways.join(", ")}. The card is charged the lower amount.`
                         : "First enable a card payment method in Shopify and add it in step 2."
                   }
-                  defaultChecked={
-                    settings.cardDiscount && plan.cardDiscount && hasCard
-                  }
-                  disabled={!plan.cardDiscount || !hasCard}
+                  defaultChecked={enabled && cardOn}
+                  disabled={!plan.cardDiscount || !hasCard || !enabled}
                   onChange={(event) => setCardOn(event.currentTarget.checked)}
                 />
                 {errors?.who && <s-text tone="critical">{errors.who}</s-text>}
@@ -374,14 +386,15 @@ export default function Settings() {
                     <s-switch
                       // Remount on each change: this React version can't
                       // switch a web component's checked state off itself.
-                      key={`${name}-${kindNow(name)}`}
+                      key={`${name}-${kindNow(name)}-${enabled}`}
                       label="Discount"
                       details={
                         kindNow(name) === "bank"
                           ? "On: paying this way gets the discount."
                           : "Off: full price, like cash on delivery."
                       }
-                      defaultChecked={kindNow(name) === "bank"}
+                      defaultChecked={enabled && kindNow(name) === "bank"}
+                      disabled={!enabled}
                       onChange={(event) => {
                         const on = event.currentTarget.checked;
                         setKinds((now) => ({
@@ -420,14 +433,15 @@ export default function Settings() {
                   />
                   {!addCard && (
                     <s-switch
-                      key={`add-${addRound}-${addDiscount}`}
+                      key={`add-${addRound}-${addDiscount}-${enabled}`}
                       label="Discount"
                       details={
                         addDiscount
                           ? "On: paying this way gets the discount."
                           : "Off: full price, like cash on delivery."
                       }
-                      defaultChecked={addDiscount}
+                      defaultChecked={enabled && addDiscount}
+                      disabled={!enabled}
                       onChange={(event) =>
                         setAddDiscount(event.currentTarget.checked)
                       }
