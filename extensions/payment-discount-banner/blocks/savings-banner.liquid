@@ -34,17 +34,35 @@
   {%- endif -%}
 
   {%- comment -%}
-    [method] names only what gets the discount: the bank transfer method, the
-    card, or both. Settings saved before bankDiscount existed count it as on.
+    [method] names everything that gets the discount: each bank transfer
+    method (Bank Deposit, Jazz Cash, EasyPaisa...) and the card, as in
+    "Bank Deposit, Jazz Cash, EasyPaisa or Credit / Debit Card". Settings saved
+    before bankDiscount existed count it as on.
   {%- endcomment -%}
-  {%- assign method = '' -%}
+  {%- assign names = '' -%}
   {%- unless discount.bankDiscount == false -%}
-    {%- assign method = discount.gateways | first | default: 'Bank Deposit' -%}
+    {%- if discount.gateways and discount.gateways.size > 0 -%}
+      {%- for gateway in discount.gateways -%}
+        {%- assign names = names | append: gateway | append: '|' -%}
+      {%- endfor -%}
+    {%- else -%}
+      {%- assign names = 'Bank Deposit|' -%}
+    {%- endif -%}
   {%- endunless -%}
   {%- if discount.cardDiscount and card_name != blank -%}
-    {%- if method != '' -%}{%- assign method = method | append: ' or ' -%}{%- endif -%}
-    {%- assign method = method | append: card_name -%}
+    {%- assign names = names | append: card_name | append: '|' -%}
   {%- endif -%}
+  {%- assign name_list = names | split: '|' -%}
+  {%- assign method = '' -%}
+  {%- for name in name_list -%}
+    {%- if forloop.first -%}
+      {%- assign method = name -%}
+    {%- elsif forloop.last -%}
+      {%- assign method = method | append: ' or ' | append: name -%}
+    {%- else -%}
+      {%- assign method = method | append: ', ' | append: name -%}
+    {%- endif -%}
+  {%- endfor -%}
 
   {%- if base > 0 and method != '' -%}
     {%- comment -%} Rounded down to the cent, as Shopify does for the order discount. {%- endcomment -%}
@@ -101,7 +119,7 @@
       "id": "card_name",
       "label": "Card name in [method]",
       "default": "Credit / Debit Card",
-      "info": "Used in [method] when cards get the discount in the app: on its own, or after \"Bank Deposit or\" when bank transfer does too."
+      "info": "Used in [method] when cards get the discount in the app: on its own, or after the bank transfer methods (\"Bank Deposit or\")."
     },
     {
       "type": "color",
