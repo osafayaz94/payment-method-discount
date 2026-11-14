@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -209,6 +210,13 @@ export default function Settings() {
   // What each method is right now, so its badge follows the dropdown.
   const [kinds, setKinds] = useState<Record<string, string>>({});
   const kindNow = (name: string) => kinds[name] ?? kindOf(name);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Methods typed in by hand (not seen on orders) can be taken off the list:
+  // saving them as "Not used" drops them, as they don't come back from orders.
+  const remove = (name: string) => {
+    flushSync(() => setKinds((now) => ({ ...now, [name]: "other" })));
+    formRef.current?.requestSubmit();
+  };
   // What a customer paying this way gets, with step 1 as it stands.
   const outcome = (name: string) => {
     const kind = kindNow(name);
@@ -218,14 +226,14 @@ export default function Settings() {
       (kind === "bank" ? bankOn : kind === "card" && cardOn);
     if (kind === "other") return { tone: "neutral", text: "Not used" };
     return on
-      ? { tone: "success", text: `${percent}% off · discount on` }
+      ? { tone: "success", text: `${percent}% off` }
       : { tone: "neutral", text: "Full price" };
   };
 
   return (
     <s-page heading="Settings">
       {!hasBank && !hasCard && <EnableMethodsFirst />}
-      <Form method="post" data-save-bar>
+      <Form method="post" data-save-bar ref={formRef}>
         <s-stack direction="block" gap="base">
           <StepCard
             number={1}
@@ -309,6 +317,11 @@ export default function Settings() {
                   alignItems="center"
                 >
                   <input type="hidden" name="methodName" value={name} />
+                  <input
+                    type="hidden"
+                    name="methodKind"
+                    value={kindNow(name)}
+                  />
                   <s-stack
                     direction="inline"
                     gap="small-200"
@@ -318,9 +331,17 @@ export default function Settings() {
                     <s-badge tone={outcome(name).tone as "success" | "neutral"}>
                       {outcome(name).text}
                     </s-badge>
+                    {!seenGateways.includes(name) && (
+                      <s-button
+                        variant="tertiary"
+                        tone="critical"
+                        onClick={() => remove(name)}
+                      >
+                        Remove
+                      </s-button>
+                    )}
                   </s-stack>
                   <s-select
-                    name="methodKind"
                     label={`What is ${name}?`}
                     labelAccessibilityVisibility="exclusive"
                     onChange={(event) => {
@@ -346,7 +367,7 @@ export default function Settings() {
                     >
                       Cash on delivery
                     </s-option>
-                    <s-option value="other">Not used / remove</s-option>
+                    <s-option value="other">Not used</s-option>
                   </s-select>
                 </s-grid>
               ))}
