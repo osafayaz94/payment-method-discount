@@ -241,11 +241,15 @@ export default function Settings() {
   };
   // Adding and removing a method are confirmed in a Shopify admin pop-up.
   const shopify = useAppBridge();
+  type ConfirmAction = "add" | "remove" | "discountOn" | "discountOff";
   const [confirm, setConfirm] = useState<{
-    action: "add" | "remove";
+    action: ConfirmAction;
     name: string;
   } | null>(null);
-  const ask = (action: "add" | "remove", name: string) => {
+  // Bumped when the pop-up closes, so a switch flipped and then cancelled
+  // snaps back to its saved position.
+  const [switchRound, setSwitchRound] = useState(0);
+  const ask = (action: ConfirmAction, name: string) => {
     setConfirm({ action, name });
     shopify.modal.show(CONFIRM_MODAL);
   };
@@ -264,9 +268,46 @@ export default function Settings() {
   const confirmed = () => {
     shopify.modal.hide(CONFIRM_MODAL);
     if (confirm?.action === "remove") remove(confirm.name);
-    else formRef.current?.requestSubmit();
+    else if (
+      confirm?.action === "discountOn" ||
+      confirm?.action === "discountOff"
+    ) {
+      const kind = confirm.action === "discountOn" ? "bank" : "cod";
+      flushSync(() => setKinds((now) => ({ ...now, [confirm.name]: kind })));
+      formRef.current?.requestSubmit();
+    } else formRef.current?.requestSubmit();
     setConfirm(null);
   };
+  const percentText = `${percent > 0 ? percent : 0}%`;
+  const modalText = !confirm
+    ? null
+    : confirm.action === "remove"
+      ? {
+          title: `Remove ${confirm.name}?`,
+          body: `${confirm.name} will be taken off this list, so the pop-up and checkout won't use it for the discount. It stays in Shopify's payment settings.`,
+          button: "Remove",
+          critical: true,
+        }
+      : confirm.action === "discountOn"
+        ? {
+            title: `Turn on ${percentText} off for ${confirm.name}?`,
+            body: `Customers who pay with ${confirm.name} will get ${percentText} off. This is saved straight away.`,
+            button: "Turn on",
+            critical: false,
+          }
+        : confirm.action === "discountOff"
+          ? {
+              title: `Turn off the discount for ${confirm.name}?`,
+              body: `Customers who pay with ${confirm.name} will pay full price. This is saved straight away.`,
+              button: "Turn off",
+              critical: true,
+            }
+          : {
+              title: `Add ${confirm.name}?`,
+              body: null,
+              button: "Add",
+              critical: false,
+            };
   // What a customer paying this way gets, with step 1 as it stands.
   const outcome = (name: string) => {
     const kind = kindNow(name);
@@ -284,11 +325,12 @@ export default function Settings() {
 
   return (
     <s-page heading="Settings">
-      <Modal id={CONFIRM_MODAL}>
+      <Modal
+        id={CONFIRM_MODAL}
+        onHide={() => setSwitchRound((round) => round + 1)}
+      >
         <p style={{ margin: 0, padding: 16 }}>
-          {confirm?.action === "remove" ? (
-            `${confirm.name} will be taken off this list, so the pop-up and checkout won't use it for the discount. It stays in Shopify's payment settings.`
-          ) : (
+          {modalText?.body ?? (
             <>
               {confirm?.name} will be added as a payment method. Make sure
               it&apos;s also turned <strong>ON</strong> in Shopify Payment
@@ -296,19 +338,13 @@ export default function Settings() {
             </>
           )}
         </p>
-        <TitleBar
-          title={
-            confirm?.action === "remove"
-              ? `Remove ${confirm.name}?`
-              : `Add ${confirm?.name ?? ""}?`
-          }
-        >
+        <TitleBar title={modalText?.title ?? ""}>
           <button
             variant="primary"
-            {...(confirm?.action === "remove" ? { tone: "critical" } : {})}
+            {...(modalText?.critical ? { tone: "critical" } : {})}
             onClick={confirmed}
           >
-            {confirm?.action === "remove" ? "Remove" : "Add"}
+            {modalText?.button ?? "OK"}
           </button>
           <button onClick={() => shopify.modal.hide(CONFIRM_MODAL)}>
             Cancel
@@ -451,7 +487,7 @@ export default function Settings() {
                     <s-switch
                       // Remount on each change: this React version can't
                       // switch a web component's checked state off itself.
-                      key={`${name}-${kindNow(name)}-${enabled}`}
+                      key={`${name}-${kindNow(name)}-${enabled}-${switchRound}`}
                       label="Discount"
                       details={
                         kindNow(name) === "bank"
@@ -460,13 +496,14 @@ export default function Settings() {
                       }
                       defaultChecked={enabled && kindNow(name) === "bank"}
                       disabled={!enabled}
-                      onChange={(event) => {
-                        const on = event.currentTarget.checked;
-                        setKinds((now) => ({
-                          ...now,
-                          [name]: on ? "bank" : "cod",
-                        }));
-                      }}
+                      onChange={(event) =>
+                        ask(
+                          event.currentTarget.checked
+                            ? "discountOn"
+                            : "discountOff",
+                          name,
+                        )
+                      }
                     />
                   )}
                 </s-grid>
