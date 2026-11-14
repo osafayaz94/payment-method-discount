@@ -592,7 +592,7 @@ export default function Settings() {
           <StepCard
             number={3}
             title="Check what customers see, then save"
-            why="A preview of the pop-up and checkout with the settings above. It updates as you change them; nothing in it can be clicked."
+            why="What customers get with the settings above. It updates as you change them."
           >
             <CheckoutPreview
               percent={percent > 0 ? percent : settings.percent}
