@@ -140,7 +140,10 @@ export const action = async ({
       message: `Settings saved, but the store was not fully updated: ${(err as Error).message}`,
     };
   }
-  return { ok: true, message: "Settings saved" };
+  return {
+    ok: true,
+    message: added.length ? `${added.join(", ")} added` : "Settings saved",
+  };
 };
 
 export default function Settings() {
@@ -170,6 +173,13 @@ export default function Settings() {
   const [showMore, setShowMore] = useState(
     Boolean(errors?.label || errors?.cardLabel),
   );
+  // Empties "Add a payment method" after each save, ready for the next one.
+  const [addRound, setAddRound] = useState(0);
+  const [lastResult, setLastResult] = useState(result);
+  if (result !== lastResult) {
+    setLastResult(result);
+    if (result?.ok) setAddRound(addRound + 1);
+  }
 
   const method = settings.gateways[0] ?? "Bank Deposit";
   // Every method the merchant might sort: the ones in the settings and the
@@ -316,7 +326,12 @@ export default function Settings() {
                 </s-text>
               )}
             </s-stack>
-            <s-grid gridTemplateColumns="1fr 1fr" gap="base" alignItems="end">
+            <s-grid
+              key={addRound}
+              gridTemplateColumns="1fr 1fr auto"
+              gap="base"
+              alignItems="end"
+            >
               <s-text-field
                 name="newMethodName"
                 label="Add a payment method"
@@ -330,6 +345,11 @@ export default function Settings() {
                 <s-option value="card">Card</s-option>
                 <s-option value="cod">Cash on delivery</s-option>
               </s-select>
+              {/* Saves the page with the new method, which then joins the
+                  list above; the fields empty for the next one. */}
+              <s-button type="submit" loading={saving}>
+                Add
+              </s-button>
             </s-grid>
             <s-stack direction="inline" gap="base">
               <s-button
