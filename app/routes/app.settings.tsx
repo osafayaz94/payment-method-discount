@@ -166,6 +166,7 @@ export default function Settings() {
 
   // The preview follows the form as the merchant types, before saving.
   const [percent, setPercent] = useState(settings.percent);
+  const [enabled, setEnabled] = useState(settings.enabled);
   const [bankOn, setBankOn] = useState(settings.bankDiscount && hasBank);
   const [cardOn, setCardOn] = useState(
     settings.cardDiscount && plan.cardDiscount && hasCard,
@@ -205,6 +206,21 @@ export default function Settings() {
             : /bank|deposit|transfer|easypaisa|jazzcash/i.test(name)
               ? "bank"
               : "card";
+  // What each method is right now, so its badge follows the dropdown.
+  const [kinds, setKinds] = useState<Record<string, string>>({});
+  const kindNow = (name: string) => kinds[name] ?? kindOf(name);
+  // What a customer paying this way gets, with step 1 as it stands.
+  const outcome = (name: string) => {
+    const kind = kindNow(name);
+    const on =
+      enabled &&
+      percent > 0 &&
+      (kind === "bank" ? bankOn : kind === "card" && cardOn);
+    if (kind === "other") return { tone: "neutral", text: "Not used" };
+    return on
+      ? { tone: "success", text: `${percent}% off · discount on` }
+      : { tone: "neutral", text: "Full price" };
+  };
 
   return (
     <s-page heading="Settings">
@@ -223,6 +239,7 @@ export default function Settings() {
               label="Give the discount"
               details="Turn off to stop every discount straight away."
               defaultChecked={settings.enabled}
+              onChange={(event) => setEnabled(event.currentTarget.checked)}
             />
             <s-grid gridTemplateColumns="1fr 2fr" gap="base" alignItems="start">
               <s-number-field
@@ -292,11 +309,24 @@ export default function Settings() {
                   alignItems="center"
                 >
                   <input type="hidden" name="methodName" value={name} />
-                  <s-text type="strong">{name}</s-text>
+                  <s-stack
+                    direction="inline"
+                    gap="small-200"
+                    alignItems="center"
+                  >
+                    <s-text type="strong">{name}</s-text>
+                    <s-badge tone={outcome(name).tone as "success" | "neutral"}>
+                      {outcome(name).text}
+                    </s-badge>
+                  </s-stack>
                   <s-select
                     name="methodKind"
                     label={`What is ${name}?`}
                     labelAccessibilityVisibility="exclusive"
+                    onChange={(event) => {
+                      const value = event.currentTarget.value;
+                      setKinds((now) => ({ ...now, [name]: value }));
+                    }}
                   >
                     <s-option
                       value="bank"
