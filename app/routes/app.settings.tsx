@@ -238,14 +238,11 @@ export default function Settings() {
   // What a customer paying this way gets, with step 1 as it stands.
   const outcome = (name: string) => {
     const kind = kindNow(name);
-    const on =
-      enabled &&
-      percent > 0 &&
-      (kind === "bank" ? bankOn : kind === "card" && cardOn);
+    const on = percent > 0 && (kind === "bank" || (kind === "card" && cardOn));
     if (kind === "other") return { tone: "neutral", text: "Not used" };
     return on
       ? { tone: "success", text: `${percent}% off` }
-      : { tone: "neutral", text: "Full price" };
+      : { tone: "neutral", text: "0% off" };
   };
 
   return (
@@ -327,10 +324,17 @@ export default function Settings() {
             doneText={`${settings.gateways.length} bank · ${settings.cardGateways.length} card · ${settings.codGateways.length} cash on delivery`}
           >
             <s-stack direction="block" gap="small-200">
+              {(!enabled || !bankOn) && (
+                <s-text tone="caution">
+                  {!enabled
+                    ? "Give the discount is off in step 1, so every method pays full price until you turn it on."
+                    : "Bank transfer is off in step 1, so these methods pay full price until you turn it on."}
+                </s-text>
+              )}
               {methods.map((name) => (
                 <s-grid
                   key={name}
-                  gridTemplateColumns="1fr 1fr"
+                  gridTemplateColumns="2fr 1fr 2fr"
                   gap="base"
                   alignItems="center"
                 >
@@ -346,9 +350,6 @@ export default function Settings() {
                     alignItems="center"
                   >
                     <s-text type="strong">{name}</s-text>
-                    <s-badge tone={outcome(name).tone as "success" | "neutral"}>
-                      {outcome(name).text}
-                    </s-badge>
                     {removable(name) && (
                       <s-button
                         variant="tertiary"
@@ -359,6 +360,9 @@ export default function Settings() {
                       </s-button>
                     )}
                   </s-stack>
+                  <s-badge tone={outcome(name).tone as "success" | "neutral"}>
+                    {outcome(name).text}
+                  </s-badge>
                   {kindOf(name) === "card" ? (
                     // Card payments are turned on or off for all cards in
                     // step 1, as the pop-up's Card choice covers them all.
