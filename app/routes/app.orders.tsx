@@ -54,7 +54,9 @@ export default function Orders() {
           <s-paragraph color="subdued">
             {used} discounted this month. Orders the app discounts are tagged{" "}
             <s-text type="strong">{APPLIED_TAG}</s-text>, so you can also filter
-            for them in Orders.
+            for them in Orders. Every bank transfer or card order is also tagged
+            with how it was paid, such as Bank Deposit, EasyPaisa, Jazz Cash or
+            Credit/Debit card.
           </s-paragraph>
           {applied.length ? (
             <OrderTable orders={applied} />

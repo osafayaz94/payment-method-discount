@@ -62,6 +62,27 @@ const normalize = (name: string) => name.trim().toLowerCase();
 // How the customer paid: their choice in the pop-up, or else the payment
 // method's name. Like checkout, any method that isn't bank transfer or cash
 // on delivery counts as card. Null when the order has no payment method.
+// The tag for how an order was paid: the store's own name for the method
+// (such as "Bank Deposit", "EasyPaisa" or "Jazz Cash") for bank transfers,
+// "Credit/Debit card" for cards, none for cash on delivery.
+export function paymentTag(
+  order: OrderForDiscount,
+  settings: DiscountSettings,
+  kind: ReturnType<typeof paymentKind>,
+): string | null {
+  if (kind === "card") return PAYMENT_TAGS.card;
+  if (kind !== "bank") return null;
+  const used = order.paymentGatewayNames ?? [];
+  const name =
+    // The merchant's spelling of a method listed in the app...
+    settings.gateways.find((g) => used.map(normalize).includes(normalize(g))) ??
+    // ...or the name on the order, when it isn't listed.
+    used.find((g) => g.trim()) ??
+    PAYMENT_TAGS.bank;
+  // Tags can't contain commas and are at most 40 characters.
+  return name.replace(/,/g, " ").trim().slice(0, 40) || PAYMENT_TAGS.bank;
+}
+
 export function paymentKind(
   order: OrderForDiscount,
   settings: DiscountSettings,
@@ -191,7 +212,7 @@ export async function applyDiscount(
   // Every bank transfer and card order is tagged with how it was paid,
   // discounted or not; tags are added once, together with any others.
   const kind = paymentKind(order, settings);
-  const kindTag = kind === "bank" || kind === "card" ? PAYMENT_TAGS[kind] : null;
+  const kindTag = paymentTag(order, settings, kind);
   const has = new Set(order.tags.map((t) => t.toLowerCase()));
   const addMissing = async (tags: (string | null)[]) => {
     const missing = tags.filter((t): t is string => Boolean(t) && !has.has(t!.toLowerCase()));
