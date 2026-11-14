@@ -536,18 +536,24 @@ export function UsageCard({
 
 // What the customer sees: the pop-up's options, then checkout offering only
 // the method they picked, with the discount already taken off.
+// The pop-up and checkout as customers see them with the settings on the
+// page, kept in step with the theme's pop-up (payment-choice.js): bank
+// transfer lists its methods, and the card choice only shows when the store
+// has a card method.
 export function CheckoutPreview({
   percent,
-  method,
   bankOn,
   cardOn,
-  codName,
+  bankMethods,
+  cardMethods,
+  codMethods,
 }: {
   percent: number;
-  method: string;
   bankOn: boolean;
   cardOn: boolean;
-  codName: string;
+  bankMethods: string[];
+  cardMethods: string[];
+  codMethods: string[];
 }) {
   const off = <s-badge tone="success">{percent}% off</s-badge>;
   const full = <s-badge>Full price</s-badge>;
@@ -565,19 +571,42 @@ export function CheckoutPreview({
       {label}
     </div>
   );
-  const option = (name: string, badge: React.ReactNode, selected = false) => (
+  const option = (
+    name: string,
+    badge: React.ReactNode,
+    selected = false,
+    detail?: string,
+  ) => (
     <s-stack
+      key={name}
       direction="inline"
       justifyContent="space-between"
       alignItems="center"
       gap="small-200"
     >
-      <s-text>
-        {selected ? "◉" : "○"} {name}
-      </s-text>
+      <s-stack direction="block" gap="none">
+        <s-text>
+          {selected ? "◉" : "○"} {name}
+        </s-text>
+        {detail && <s-text color="subdued">{detail}</s-text>}
+      </s-stack>
       {badge}
     </s-stack>
   );
+  const row = (button: string, names: string[], badge: React.ReactNode) => (
+    <s-grid gridTemplateColumns="1fr auto 2fr" gap="base" alignItems="center">
+      {mockButton(button)}
+      <s-icon type="arrow-right" />
+      <s-box border="base" borderRadius="base" padding="small">
+        <s-stack direction="block" gap="small-200">
+          {names.map((name, index) => option(name, badge, index === 0))}
+        </s-stack>
+      </s-box>
+    </s-grid>
+  );
+  const banks = bankMethods.length ? bankMethods : ["Bank Deposit"];
+  const cods = codMethods.length ? codMethods : ["Cash on Delivery"];
+  const hasCard = cardMethods.length > 0;
 
   return (
     <s-stack direction="block" gap="base">
@@ -597,37 +626,24 @@ export function CheckoutPreview({
             <s-box border="base" borderRadius="base" padding="small">
               <s-stack direction="block" gap="small-200">
                 <s-text type="strong">How would you like to pay?</s-text>
-                {option("Bank transfer", bankOn ? off : full, true)}
-                {option("Credit / debit card", cardOn ? off : full)}
+                {option(
+                  "Bank transfer",
+                  bankOn ? off : full,
+                  true,
+                  banks.join(" · "),
+                )}
+                {hasCard && option("Credit / debit card", cardOn ? off : full)}
                 {option("Cash on Delivery", full)}
               </s-stack>
             </s-box>
           </s-grid>
           <s-text color="subdued">
-            Checkout then only offers the chosen method
+            Checkout then only offers the methods of the chosen kind
           </s-text>
-          <s-grid
-            gridTemplateColumns="1fr auto 2fr"
-            gap="base"
-            alignItems="center"
-          >
-            {mockButton("Bank transfer")}
-            <s-icon type="arrow-right" />
-            <s-box border="base" borderRadius="base" padding="small">
-              {option(method, bankOn ? off : full, true)}
-            </s-box>
-          </s-grid>
-          <s-grid
-            gridTemplateColumns="1fr auto 2fr"
-            gap="base"
-            alignItems="center"
-          >
-            {mockButton("Cash on Delivery")}
-            <s-icon type="arrow-right" />
-            <s-box border="base" borderRadius="base" padding="small">
-              {option(codName, full, true)}
-            </s-box>
-          </s-grid>
+          {row("Bank transfer", banks, bankOn ? off : full)}
+          {hasCard &&
+            row("Credit / debit card", cardMethods, cardOn ? off : full)}
+          {row("Cash on Delivery", cods, full)}
         </s-stack>
       </s-box>
     </s-stack>

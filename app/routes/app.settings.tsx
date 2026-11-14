@@ -192,7 +192,6 @@ export default function Settings() {
     }
   }
 
-  const method = settings.gateways[0] ?? "Bank Deposit";
   // Every method the merchant might sort: the ones in the settings and the
   // ones seen on recent orders.
   // Shopify's Bank Deposit and Cash on Delivery come first, then the rest in
@@ -597,10 +596,11 @@ export default function Settings() {
           >
             <CheckoutPreview
               percent={percent > 0 ? percent : settings.percent}
-              method={method}
-              bankOn={bankOn}
-              cardOn={cardOn}
-              codName={settings.codGateways[0] ?? "Cash on Delivery"}
+              bankOn={enabled && bankOn}
+              cardOn={enabled && cardOn}
+              bankMethods={methods.filter((name) => kindNow(name) === "bank")}
+              cardMethods={methods.filter((name) => kindNow(name) === "card")}
+              codMethods={methods.filter((name) => kindNow(name) === "cod")}
             />
             <s-stack
               direction="inline"
