@@ -241,7 +241,10 @@ export default function Settings() {
   };
   // Adding and removing a method are confirmed in a Shopify admin pop-up.
   const shopify = useAppBridge();
-  type ConfirmAction = "add" | "remove" | "discountOn" | "discountOff";
+  type ConfirmAction =
+    "add" | "remove" | "discountOn" | "discountOff" | "percent";
+  // Set once a change of percentage is confirmed, so that submit goes through.
+  const percentConfirmed = useRef(false);
   const [confirm, setConfirm] = useState<{
     action: ConfirmAction;
     name: string;
@@ -275,7 +278,10 @@ export default function Settings() {
       const kind = confirm.action === "discountOn" ? "bank" : "cod";
       flushSync(() => setKinds((now) => ({ ...now, [confirm.name]: kind })));
       formRef.current?.requestSubmit();
-    } else formRef.current?.requestSubmit();
+    } else {
+      if (confirm?.action === "percent") percentConfirmed.current = true;
+      formRef.current?.requestSubmit();
+    }
     setConfirm(null);
   };
   const percentText = `${percent > 0 ? percent : 0}%`;
@@ -288,26 +294,33 @@ export default function Settings() {
           button: "Remove",
           critical: true,
         }
-      : confirm.action === "discountOn"
+      : confirm.action === "percent"
         ? {
-            title: `Turn on ${percentText} off for ${confirm.name}?`,
-            body: `Customers who pay with ${confirm.name} will get ${percentText} off. This is saved straight away.`,
-            button: "Turn on",
+            title: `Change the discount to ${percentText} off?`,
+            body: `Customers who pay by a discounted method will get ${percentText} off instead of ${settings.percent}%. This is saved straight away.`,
+            button: "Save",
             critical: false,
           }
-        : confirm.action === "discountOff"
+        : confirm.action === "discountOn"
           ? {
-              title: `Turn off the discount for ${confirm.name}?`,
-              body: `Customers who pay with ${confirm.name} will pay full price. This is saved straight away.`,
-              button: "Turn off",
-              critical: true,
-            }
-          : {
-              title: `Add ${confirm.name}?`,
-              body: null,
-              button: "Add",
+              title: `Turn on ${percentText} off for ${confirm.name}?`,
+              body: `Customers who pay with ${confirm.name} will get ${percentText} off. This is saved straight away.`,
+              button: "Turn on",
               critical: false,
-            };
+            }
+          : confirm.action === "discountOff"
+            ? {
+                title: `Turn off the discount for ${confirm.name}?`,
+                body: `Customers who pay with ${confirm.name} will pay full price. This is saved straight away.`,
+                button: "Turn off",
+                critical: true,
+              }
+            : {
+                title: `Add ${confirm.name}?`,
+                body: null,
+                button: "Add",
+                critical: false,
+              };
   // What a customer paying this way gets, with step 1 as it stands.
   const outcome = (name: string) => {
     const kind = kindNow(name);
@@ -352,7 +365,21 @@ export default function Settings() {
         </TitleBar>
       </Modal>
       {!hasBank && !hasCard && <EnableMethodsFirst />}
-      <Form method="post" data-save-bar ref={formRef}>
+      <Form
+        method="post"
+        data-save-bar
+        ref={formRef}
+        onSubmit={(event) => {
+          // A new percentage is confirmed first (Save settings, the save bar
+          // or Enter in the field all come here).
+          if (percent !== settings.percent && !percentConfirmed.current) {
+            event.preventDefault();
+            ask("percent", "");
+            return;
+          }
+          percentConfirmed.current = false;
+        }}
+      >
         <s-stack direction="block" gap="base">
           <StepCard
             number={1}

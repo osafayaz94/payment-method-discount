@@ -3,7 +3,9 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
+import { useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
+import { Modal, TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadBase, loadOrders } from "../admin.server";
 import {
@@ -475,13 +477,55 @@ function QuickSwitch({
 }
 
 // The discount percentage, typed in and saved on its own.
+const PERCENT_MODAL = "confirm-percent";
+
 function PercentBox({ percent }: { percent: number }) {
   const fetcher = useFetcher<ActionResult>();
   useToastResult(fetcher.data);
   const saving = fetcher.state !== "idle";
+  const shopify = useAppBridge();
+  // A new percentage is confirmed in a pop-up before it's saved.
+  const [next, setNext] = useState<string | null>(null);
   return (
     <s-box padding="base" borderWidth="base" borderRadius="base">
-      <fetcher.Form method="post">
+      <Modal id={PERCENT_MODAL}>
+        <p style={{ margin: 0, padding: 16 }}>
+          Customers who pay by a discounted method will get {next}% off. This is
+          saved straight away.
+        </p>
+        <TitleBar title={`Change the discount to ${next}% off?`}>
+          <button
+            variant="primary"
+            onClick={() => {
+              shopify.modal.hide(PERCENT_MODAL);
+              fetcher.submit(
+                { intent: "percent", percent: next ?? "" },
+                { method: "post" },
+              );
+            }}
+          >
+            Save
+          </button>
+          <button onClick={() => shopify.modal.hide(PERCENT_MODAL)}>
+            Cancel
+          </button>
+        </TitleBar>
+      </Modal>
+      <fetcher.Form
+        method="post"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const value = String(
+            new FormData(event.currentTarget).get("percent") ?? "",
+          ).trim();
+          if (Number(value) === percent) {
+            shopify.toast.show(`The discount is already ${percent}%`);
+            return;
+          }
+          setNext(value);
+          shopify.modal.show(PERCENT_MODAL);
+        }}
+      >
         <input type="hidden" name="intent" value="percent" />
         <div
           style={{
