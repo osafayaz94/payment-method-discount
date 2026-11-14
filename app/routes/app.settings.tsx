@@ -347,7 +347,7 @@ export default function Settings() {
               </s-select>
               {/* Saves the page with the new method, which then joins the
                   list above; the fields empty for the next one. */}
-              <s-button type="submit" loading={saving}>
+              <s-button type="submit" {...(saving ? { loading: true } : {})}>
                 Add
               </s-button>
             </s-grid>
