@@ -132,6 +132,7 @@ export async function publishSettings(
     showThankYou: settings.showThankYou,
     cardLabel: settings.cardLabel,
     codGateways: settings.codGateways,
+    cardGateways: settings.cardGateways,
     customize: state.plan.customize,
     pausedMonth: state.limitReason ? state.month : null,
     timeZone: owner.ianaTimezone,

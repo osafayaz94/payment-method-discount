@@ -29,6 +29,8 @@
       "cardDiscount": {% if discount.cardDiscount %}true{% else %}false{% endif %},
       "customize": {% if discount.customize %}true{% else %}false{% endif %},
       "showCard": {{ block.settings.show_card | json }},
+      "bankMethods": {% if discount.gateways %}{{ discount.gateways | json }}{% else %}[]{% endif %},
+      "cardMethods": {% if discount.cardGateways %}{{ discount.cardGateways | json }}{% else %}null{% endif %},
       "defaultChoice": {{ block.settings.default_choice | json }},
       "replaceBuyNow": {{ block.settings.replace_buy_now | json }},
       "hideExpress": {{ block.settings.hide_express | json }},

@@ -81,7 +81,7 @@
 }
 
 .pc-option input {
-  grid-row: span 3;
+  grid-row: span 4;
   margin: 0;
   width: 18px;
   height: 18px;
@@ -93,6 +93,12 @@
 
 .pc-option__detail {
   font-size: 0.9em;
+  color: #555;
+}
+
+.pc-option__methods {
+  grid-column: 2;
+  font-size: 0.85em;
   color: #555;
 }
 

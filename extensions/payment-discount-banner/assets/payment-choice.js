@@ -89,7 +89,9 @@
   var onContinue;
   var lastFocus;
 
-  function option(value, label, detail, discounted, pay) {
+  // methods: the store's payment methods behind this choice, shown under its
+  // name (such as "Bank Deposit · JazzCash · EasyPaisa").
+  function option(value, label, detail, discounted, pay, methods) {
     var wrapper = document.createElement('label');
     wrapper.className = 'pc-option' + (discounted ? ' pc-option--discounted' : '');
     var input = document.createElement('input');
@@ -104,6 +106,12 @@
     note.textContent = detail;
     wrapper.appendChild(input);
     wrapper.appendChild(name);
+    if (methods && methods.length) {
+      var list = document.createElement('span');
+      list.className = 'pc-option__methods';
+      list.textContent = methods.join(' · ');
+      wrapper.appendChild(list);
+    }
     wrapper.appendChild(note);
     if (pay) {
       var amount = document.createElement('span');
@@ -187,10 +195,13 @@
     list.setAttribute('role', 'radiogroup');
     list.appendChild(
       config.bankDiscount === false
-        ? option('bank', text.bank, text.fullPrice, false, payFull)
-        : option('bank', text.bank, saveText, true, payDiscounted)
+        ? option('bank', text.bank, text.fullPrice, false, payFull, config.bankMethods)
+        : option('bank', text.bank, saveText, true, payDiscounted, config.bankMethods)
     );
-    if (config.showCard) {
+    // Card only when the store has a card method (older settings without the
+    // list: as before).
+    var hasCard = !Array.isArray(config.cardMethods) || config.cardMethods.length > 0;
+    if (config.showCard && hasCard) {
       list.appendChild(
         config.cardDiscount
           ? option('card', text.card, saveText, true, payDiscounted)
