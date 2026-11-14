@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { Modal, TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import type {
   ActionFunctionArgs,
   HeadersFunction,
@@ -65,6 +66,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     combinesWith: checkout.discount?.combinesWith ?? DEFAULT_COMBINATIONS,
   };
 };
+
+const CONFIRM_MODAL = "confirm-payment-method";
 
 export const action = async ({
   request,
@@ -229,13 +232,40 @@ export default function Settings() {
   // orders, not cash on delivery, and not Shopify's built-in methods.
   const removable = (name: string) =>
     !seenGateways.includes(name) &&
-    kindNow(name) !== "cod" &&
     !/^(bank deposit|cash on delivery \(cod\)|money order)$/i.test(name);
   // Methods typed in by hand (not seen on orders) can be taken off the list:
   // saving them as "Not used" drops them, as they don't come back from orders.
   const remove = (name: string) => {
     flushSync(() => setKinds((now) => ({ ...now, [name]: "other" })));
     formRef.current?.requestSubmit();
+  };
+  // Adding and removing a method are confirmed in a Shopify admin pop-up.
+  const shopify = useAppBridge();
+  const [confirm, setConfirm] = useState<{
+    action: "add" | "remove";
+    name: string;
+  } | null>(null);
+  const ask = (action: "add" | "remove", name: string) => {
+    setConfirm({ action, name });
+    shopify.modal.show(CONFIRM_MODAL);
+  };
+  const askToAdd = () => {
+    const name = String(
+      new FormData(formRef.current ?? undefined).get("newMethodName") ?? "",
+    ).trim();
+    if (!name) {
+      shopify.toast.show("Type the payment method's name first", {
+        isError: true,
+      });
+      return;
+    }
+    ask("add", name);
+  };
+  const confirmed = () => {
+    shopify.modal.hide(CONFIRM_MODAL);
+    if (confirm?.action === "remove") remove(confirm.name);
+    else formRef.current?.requestSubmit();
+    setConfirm(null);
   };
   // What a customer paying this way gets, with step 1 as it stands.
   const outcome = (name: string) => {
@@ -254,6 +284,31 @@ export default function Settings() {
 
   return (
     <s-page heading="Settings">
+      <Modal id={CONFIRM_MODAL}>
+        <p style={{ margin: 0, padding: 16 }}>
+          {confirm?.action === "remove"
+            ? `${confirm.name} will be taken off this list, so the pop-up and checkout won't use it for the discount. It stays in Shopify's payment settings.`
+            : `${confirm?.name ?? ""} will be added at 0% off; turn on its Discount switch to give it the discount. Make sure it's also turned on in Shopify Settings, Payments, with exactly the same name.`}
+        </p>
+        <TitleBar
+          title={
+            confirm?.action === "remove"
+              ? `Remove ${confirm.name}?`
+              : `Add ${confirm?.name ?? ""}?`
+          }
+        >
+          <button
+            variant="primary"
+            {...(confirm?.action === "remove" ? { tone: "critical" } : {})}
+            onClick={confirmed}
+          >
+            {confirm?.action === "remove" ? "Remove" : "Add"}
+          </button>
+          <button onClick={() => shopify.modal.hide(CONFIRM_MODAL)}>
+            Cancel
+          </button>
+        </TitleBar>
+      </Modal>
       {!hasBank && !hasCard && <EnableMethodsFirst />}
       <Form method="post" data-save-bar ref={formRef}>
         <s-stack direction="block" gap="base">
@@ -370,7 +425,7 @@ export default function Settings() {
                       <s-button
                         variant="tertiary"
                         tone="critical"
-                        onClick={() => remove(name)}
+                        onClick={() => ask("remove", name)}
                       >
                         Remove
                       </s-button>
@@ -451,7 +506,10 @@ export default function Settings() {
                 Type its name exactly as shown at checkout.
               </s-text>
               <s-stack direction="inline">
-                <s-button type="submit" {...(saving ? { loading: true } : {})}>
+                <s-button
+                  onClick={askToAdd}
+                  {...(saving ? { loading: true } : {})}
+                >
                   Add
                 </s-button>
               </s-stack>
