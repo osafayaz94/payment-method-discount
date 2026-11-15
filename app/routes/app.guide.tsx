@@ -69,10 +69,10 @@ export default function Guide() {
           Step 2 lists your payment methods with a Discount switch each: on
           gives that method {percent}% off, off means full price, like cash on
           delivery. Methods used on your orders are listed already. For any
-          other, type its name exactly as at checkout (such as Jazz Cash) and
-          click Add, then switch its Discount on. Methods you added yourself can
-          be removed. Card payments share one Discount switch, on their row once
-          your store has a card method.
+          other, type its name exactly as at checkout (such as PayPal, Stripe,
+          JazzCash or EasyPaisa) and click Add, then switch its Discount on.
+          Methods you added yourself can be removed. Card payments share one
+          Discount switch, on their row once your store has a card method.
         </>
       ),
     },
