@@ -93,8 +93,9 @@ export const action = async ({
   const cardGateways = ofKind("card");
 
   const percent = Number(form.get("percent"));
-  const label = String(form.get("label") ?? "").trim();
-  const cardLabel = String(form.get("cardLabel") ?? "").trim();
+  // The discount names aren't edited here any more: they stay as saved.
+  const label = base.settings.label || "Bank Deposit discount";
+  const cardLabel = base.settings.cardLabel || "Card payment discount";
   const bankDiscount = form.get("bankDiscount") !== null;
   const cardDiscount = form.get("cardDiscount") !== null;
 
@@ -107,8 +108,6 @@ export const action = async ({
   if (cardDiscount && !cardGateways.length)
     errors.who =
       "Card needs a card payment method: set one in step 2, or turn card off";
-  if (!label) errors.label = "Enter a name";
-  if (!cardLabel) errors.cardLabel = "Enter a name";
   if (Object.keys(errors).length) return { ok: false, errors };
 
   const settings: DiscountSettings = {
@@ -579,26 +578,10 @@ export default function Settings() {
               codMethods={methods.filter((name) => kindNow(name) === "cod")}
             />
             <s-text type="strong">
-              Extra settings: discount names, customer emails, combining with
-              other discounts
+              Extra settings: customer emails and combining with other discounts
             </s-text>
             <div>
               <s-stack direction="block" gap="base">
-                <s-grid gridTemplateColumns="1fr 1fr" gap="base">
-                  <s-text-field
-                    name="label"
-                    label="Name for the bank transfer discount"
-                    defaultValue={settings.label}
-                    details="Shown at checkout, on the order and in emails"
-                    error={errors?.label}
-                  />
-                  <s-text-field
-                    name="cardLabel"
-                    label="Name for the card discount"
-                    defaultValue={settings.cardLabel}
-                    error={errors?.cardLabel}
-                  />
-                </s-grid>
                 <s-switch
                   name="notifyCustomer"
                   label="Email the customer the new total when an order is discounted after it's placed"
