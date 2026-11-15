@@ -301,7 +301,7 @@ export async function applyDiscount(
             percentValue: settings.percent,
             description: settings.label.includes("%")
               ? settings.label
-              : `${settings.label} ${settings.percent}% off`,
+              : `${settings.percent}% off ${settings.label}`,
           },
         })
       ).orderEditAddLineItemDiscount;
