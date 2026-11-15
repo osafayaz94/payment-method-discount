@@ -15,7 +15,7 @@ Images (in the session's scratchpad, to upload):
 | App name | Nexora: Bank Transfer Discount |
 | App URL | https://payment-method-discount.osafayaz94.workers.dev |
 | Privacy policy URL | https://payment-method-discount.osafayaz94.workers.dev/privacy |
-| Support email | osafayaz94@gmail.com |
+| Support email | nexoraapps.support@gmail.com |
 | API contact email | osafayaz94@gmail.com |
 | Emergency contact | your email and phone number |
 

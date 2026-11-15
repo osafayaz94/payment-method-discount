@@ -2,7 +2,7 @@ import type { MetaFunction } from "react-router";
 
 // Public privacy policy, linked from the Shopify App Store listing.
 const APP_NAME = "Nexora: Bank Transfer Discount";
-const CONTACT_EMAIL = "osafayaz94@gmail.com";
+const CONTACT_EMAIL = "nexoraapps.support@gmail.com";
 const UPDATED = "November 5, 2026";
 
 export const meta: MetaFunction = () => [

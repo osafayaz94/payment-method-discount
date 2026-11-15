@@ -5,7 +5,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadBase } from "../admin.server";
 import { HelpCard } from "../components/ui";
 
-const SUPPORT_EMAIL = "osafayaz94@gmail.com";
+const SUPPORT_EMAIL = "nexoraapps.support@gmail.com";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const base = await loadBase(request);
