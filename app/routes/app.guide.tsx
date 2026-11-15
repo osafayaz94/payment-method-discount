@@ -79,11 +79,11 @@ export default function Guide() {
       text: (
         <>
           Step 3 shows what customers will see with your settings. When it looks
-          right, click Save settings.
+          right, click Save in the bar at the top of the page.
         </>
       ),
       image: "preview",
-      alt: "Step 3 of the app's settings: a preview of the pop-up and checkout, and the Save settings button",
+      alt: "Step 3 of the app's settings: what customers see with each payment choice",
     },
     {
       title: "Turn on the payment pop-up",

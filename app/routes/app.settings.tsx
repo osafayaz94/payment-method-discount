@@ -120,7 +120,8 @@ export const action = async ({
     cardGateways,
     label,
     cardLabel,
-    notifyCustomer: form.get("notifyCustomer") !== null,
+    // Not on the page any more: kept as saved (on for new stores).
+    notifyCustomer: base.settings.notifyCustomer,
     bankDiscount,
     cardDiscount,
   };
@@ -133,7 +134,8 @@ export const action = async ({
     await setCombinations(base.graphql, discountId, {
       productDiscounts: form.get("combineProduct") !== null,
       orderDiscounts: form.get("combineOrder") !== null,
-      shippingDiscounts: form.get("combineShipping") !== null,
+      // Always combines with free or reduced shipping.
+      shippingDiscounts: true,
     });
   } catch (err) {
     return {
@@ -361,7 +363,7 @@ export default function Settings() {
         data-save-bar
         ref={formRef}
         onSubmit={(event) => {
-          // A new percentage is confirmed first (Save settings, the save bar
+          // A new percentage is confirmed first (the save bar
           // or Enter in the field all come here).
           if (percent !== settings.percent && !percentConfirmed.current) {
             event.preventDefault();
@@ -577,17 +579,10 @@ export default function Settings() {
               cardMethods={methods.filter((name) => kindNow(name) === "card")}
               codMethods={methods.filter((name) => kindNow(name) === "cod")}
             />
-            <s-text type="strong">
-              Extra settings: customer emails and combining with other discounts
-            </s-text>
+            <s-text type="strong">Combining with other discounts</s-text>
             <div>
               <s-stack direction="block" gap="base">
-                <s-switch
-                  name="notifyCustomer"
-                  label="Email the customer the new total when an order is discounted after it's placed"
-                  defaultChecked={settings.notifyCustomer}
-                />
-                <s-text type="strong">Can be used together with</s-text>
+                <s-text color="subdued">Can be used together with:</s-text>
                 <s-switch
                   name="combineProduct"
                   label="Product discounts and sale prices"
@@ -599,22 +594,8 @@ export default function Settings() {
                   details="Only those that also allow combining."
                   defaultChecked={combinesWith.orderDiscounts}
                 />
-                <s-switch
-                  name="combineShipping"
-                  label="Free or reduced shipping"
-                  defaultChecked={combinesWith.shippingDiscounts}
-                />
               </s-stack>
             </div>
-            <s-stack direction="inline" gap="base">
-              <s-button
-                type="submit"
-                variant="primary"
-                {...(saving ? { loading: true } : {})}
-              >
-                Save settings
-              </s-button>
-            </s-stack>
           </StepCard>
         </s-stack>
       </Form>
