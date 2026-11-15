@@ -3,9 +3,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
-import { Modal, TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadBase, loadOrders } from "../admin.server";
 import {
@@ -165,8 +163,6 @@ export default function Home() {
   const method = settings.gateways[0] ?? "Bank Deposit";
   const hasBank = settings.gateways.length > 0;
   const hasCard = settings.cardGateways.length > 0;
-  const bankOn = settings.bankDiscount && hasBank;
-  const cardOn = settings.cardDiscount && plan.cardDiscount && hasCard;
   const status = !settings.enabled
     ? { color: BRAND.muted, text: "Off" }
     : paused
@@ -260,75 +256,23 @@ export default function Home() {
 
       {!hasBank && !hasCard && <EnableMethodsFirst />}
 
+      {/* A summary with the main switch; the percentage and who gets it
+          are set in Settings. */}
       <s-section heading="Discount">
         <s-stack direction="block" gap="base">
-          <s-paragraph color="subdued">
-            Switches save straight away. Discounted payment choices get{" "}
-            {settings.percent}% off; cash on delivery always pays full price.
-          </s-paragraph>
-          <PercentBox percent={settings.percent} />
           <QuickSwitch
             field="enabled"
             label="Discount"
-            details="The main switch: when it's off, every customer pays full price."
+            details={
+              settings.enabled
+                ? `${settings.percent}% off for ${discountedMethods(settings, plan.cardDiscount)}. Cash on delivery pays full price.`
+                : "Off: every customer pays full price."
+            }
             checked={settings.enabled}
           />
-          {/* Who gets the discount: only matters while the discount is on. */}
-          <div
-            style={{
-              marginLeft: 20,
-              paddingLeft: 16,
-              borderLeft: `3px solid ${settings.enabled ? BRAND.accent : BRAND.track}`,
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-              opacity: settings.enabled ? 1 : 0.55,
-            }}
-          >
-            <s-text type="strong">Who gets it</s-text>
-            <QuickSwitch
-              field="bankDiscount"
-              label="Bank transfer"
-              details={
-                hasBank
-                  ? `${settings.percent}% off for ${settings.gateways.join(", ")}.`
-                  : "First enable a bank transfer method, such as Bank Deposit, in Shopify and add it in Settings, step 2."
-              }
-              checked={bankOn}
-              locked={
-                !settings.enabled
-                  ? "Turn on Discount first."
-                  : !hasBank
-                    ? "No bank transfer method yet."
-                    : bankOn && !cardOn
-                      ? "Card is off, so this one stays on."
-                      : undefined
-              }
-            />
-            <QuickSwitch
-              field="cardDiscount"
-              label="Credit or debit card"
-              details={
-                !plan.cardDiscount
-                  ? "Available on the Unlimited plan."
-                  : hasCard
-                    ? `${settings.percent}% off for ${settings.cardGateways.join(", ")}, when chosen in the pop-up.`
-                    : "First enable a card payment method in Shopify and add it in Settings, step 2."
-              }
-              checked={cardOn}
-              locked={
-                !settings.enabled
-                  ? "Turn on Discount first."
-                  : !plan.cardDiscount
-                    ? "Upgrade to use it."
-                    : !hasCard
-                      ? "No card payment method yet."
-                      : cardOn && !bankOn
-                        ? "Bank transfer is off, so this one stays on."
-                        : undefined
-              }
-            />
-          </div>
+          <s-link href="/app/settings">
+            Change the percentage or payment methods in Settings
+          </s-link>
         </s-stack>
       </s-section>
 
@@ -463,103 +407,6 @@ function QuickSwitch({
 }
 
 // The discount percentage, typed in and saved on its own.
-const PERCENT_MODAL = "confirm-percent";
-
-function PercentBox({ percent }: { percent: number }) {
-  const fetcher = useFetcher<ActionResult>();
-  useToastResult(fetcher.data);
-  const saving = fetcher.state !== "idle";
-  const shopify = useAppBridge();
-  // A new percentage is confirmed in a pop-up before it's saved.
-  const [next, setNext] = useState<string | null>(null);
-  return (
-    <s-box padding="base" borderWidth="base" borderRadius="base">
-      <Modal id={PERCENT_MODAL}>
-        <p style={{ margin: 0, padding: 16 }}>
-          Customers who pay by a discounted method will get {next}% off.
-        </p>
-        <TitleBar title={`Change the discount to ${next}% off?`}>
-          <button
-            variant="primary"
-            onClick={() => {
-              shopify.modal.hide(PERCENT_MODAL);
-              fetcher.submit(
-                { intent: "percent", percent: next ?? "" },
-                { method: "post" },
-              );
-            }}
-          >
-            Save
-          </button>
-          <button onClick={() => shopify.modal.hide(PERCENT_MODAL)}>
-            Cancel
-          </button>
-        </TitleBar>
-      </Modal>
-      <fetcher.Form
-        method="post"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const value = String(
-            new FormData(event.currentTarget).get("percent") ?? "",
-          ).trim();
-          if (Number(value) === percent) {
-            shopify.toast.show(`The discount is already ${percent}%`);
-            return;
-          }
-          setNext(value);
-          shopify.modal.show(PERCENT_MODAL);
-        }}
-      >
-        <input type="hidden" name="intent" value="percent" />
-        <div
-          style={{
-            display: "flex",
-            gap: 16,
-            alignItems: "flex-end",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ flex: "1 1 220px" }}>
-            <s-stack direction="block" gap="small-100">
-              <s-text type="strong">Discount percentage</s-text>
-              <s-text color="subdued">
-                How much customers save when they pay by a discounted method.
-                Type any amount, such as 3, 5 or 7.5.
-              </s-text>
-            </s-stack>
-          </div>
-          <div style={{ width: 140 }}>
-            <s-number-field
-              // Remount when the saved value changes.
-              key={percent}
-              name="percent"
-              label="Discount percentage"
-              labelAccessibilityVisibility="exclusive"
-              suffix="%"
-              min={0.01}
-              max={100}
-              step={0.5}
-              defaultValue={String(percent)}
-              error={
-                fetcher.data && !fetcher.data.ok
-                  ? fetcher.data.message
-                  : undefined
-              }
-            />
-          </div>
-          <s-button
-            type="submit"
-            variant="primary"
-            {...(saving ? { loading: true } : {})}
-          >
-            Save
-          </s-button>
-        </div>
-      </fetcher.Form>
-    </s-box>
-  );
-}
 
 // The pop-up is how customers choose bank transfer or card before
 // checkout, so it's required: no off switch, only whether it's switched on
