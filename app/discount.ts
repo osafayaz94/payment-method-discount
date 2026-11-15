@@ -98,7 +98,7 @@ export function paymentKind(
 }
 
 // True when the pop-up choice was bank transfer or card but the order was
-// paid with a different kind of method.
+// paid with a different kind of method that doesn't itself get the discount.
 export function paidOtherThanChosen(
   order: OrderForDiscount,
   settings: DiscountSettings,
@@ -106,7 +106,11 @@ export function paidOtherThanChosen(
   const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
   if (choice !== "bank" && choice !== "card") return false;
   const paid = gatewayKind(order, settings);
-  return paid !== null && paid !== choice;
+  if (paid === null || paid === choice) return false;
+  // Paid another upfront way that gets the discount anyway (card with the
+  // card discount on, or the other way round): nothing to check.
+  const discounted = paid === "bank" ? settings.bankDiscount : paid === "card" && settings.cardDiscount;
+  return !discounted;
 }
 
 // How the order was paid, from its payment method names alone.
@@ -236,7 +240,9 @@ export async function applyDiscount(
 
   // Every bank transfer and card order is tagged with how it was paid,
   // discounted or not; tags are added once, together with any others.
-  const kind = paymentKind(order, settings);
+  // Tagged with how the order was really paid when its payment method says
+  // so, else with the pop-up choice.
+  const kind = gatewayKind(order, settings) ?? paymentKind(order, settings);
   const kindTag = paymentTag(order, settings, kind);
   const has = new Set(order.tags.map((t) => t.toLowerCase()));
   const addMissing = async (tags: (string | null)[]) => {
@@ -249,7 +255,7 @@ export async function applyDiscount(
     // Chose one way in the pop-up, paid another: tagged with how it was
     // really paid, and payment-mismatch for the merchant to check.
     const choiceTags = paidOtherThanChosen(order, settings)
-      ? [MISMATCH_TAG, paymentTag(order, settings, gatewayKind(order, settings))]
+      ? [MISMATCH_TAG, kindTag]
       : [kindTag];
     const discounted =
       settings.enabled &&

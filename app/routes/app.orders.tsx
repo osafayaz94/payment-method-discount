@@ -58,8 +58,9 @@ export default function Orders() {
             with how it was paid, such as Bank Deposit, EasyPaisa, Jazz Cash or
             Credit/Debit card. An order tagged{" "}
             <s-text type="strong">payment-mismatch</s-text> got the bank
-            transfer discount but was paid another way (Shopify can&apos;t
-            always hide card payments at checkout): check it before you ship.
+            transfer discount but was paid a way that doesn&apos;t get it, such
+            as a card while card payments are full price (Shopify can&apos;t
+            always hide card payments at checkout).
           </s-paragraph>
           {applied.length ? (
             <OrderTable orders={applied} />

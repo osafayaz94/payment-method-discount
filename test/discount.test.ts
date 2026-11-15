@@ -318,6 +318,10 @@ test("chose bank transfer in the pop-up but paid by card: flagged", async () => 
     MISMATCH_TAG,
     PAYMENT_TAGS.card,
   ]);
+  // Card payments get the discount too: nothing to check.
+  const cardsToo = fakeShopify(order);
+  await applyDiscount(cardsToo.graphql, order.id, { ...settings, cardDiscount: true });
+  assert.deepEqual(cardsToo.calls.at(-1)?.variables.tags, [APPLIED_TAG, PAYMENT_TAGS.card]);
   // Paid the way they chose: no flag.
   const fine = { ...order, paymentGatewayNames: ["Bank Deposit"] };
   const fineShop = fakeShopify(fine);
