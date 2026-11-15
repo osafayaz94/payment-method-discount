@@ -5,6 +5,7 @@ import {
   CHOICE_ATTRIBUTE,
   FAILED_TAG,
   PAYMENT_TAGS,
+  MISMATCH_TAG,
   applyDiscount,
   paymentKind,
   paymentTag,
@@ -187,7 +188,11 @@ test("card-only discount: pop-up bank orders get nothing, card orders are tagged
   // No discount, but still tagged with how it was paid.
   assert.deepEqual(bankShop.calls.at(-1)?.variables.tags, ["Bank Deposit"]);
 
-  const card = { ...unpaidBankOrder, customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "card" }] };
+  const card = {
+    ...unpaidBankOrder,
+    paymentGatewayNames: ["bogus"],
+    customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "card" }],
+  };
   const cardShop = fakeShopify(card);
   const result = await applyDiscount(cardShop.graphql, card.id, cardOnly);
   assert.equal("discountedAtCheckout" in result && result.discountedAtCheckout, true);
@@ -297,4 +302,25 @@ test("orders are tagged with the method they were paid with", () => {
   assert.equal(paymentTag(paidWith("Meezan Bank"), shop, "bank"), "Meezan Bank");
   assert.equal(paymentTag(paidWith("Stripe"), shop, "card"), PAYMENT_TAGS.card);
   assert.equal(paymentTag(paidWith("Cash on Delivery (COD)"), shop, "cod"), null);
+});
+
+test("chose bank transfer in the pop-up but paid by card: flagged", async () => {
+  const order = {
+    ...unpaidBankOrder,
+    paymentGatewayNames: ["bogus"],
+    customAttributes: [{ key: CHOICE_ATTRIBUTE, value: "bank" }],
+  };
+  const shop = fakeShopify(order);
+  const result = await applyDiscount(shop.graphql, order.id, settings);
+  assert.equal("discountedAtCheckout" in result && result.discountedAtCheckout, true);
+  assert.deepEqual(shop.calls.at(-1)?.variables.tags, [
+    APPLIED_TAG,
+    MISMATCH_TAG,
+    PAYMENT_TAGS.card,
+  ]);
+  // Paid the way they chose: no flag.
+  const fine = { ...order, paymentGatewayNames: ["Bank Deposit"] };
+  const fineShop = fakeShopify(fine);
+  await applyDiscount(fineShop.graphql, fine.id, settings);
+  assert.deepEqual(fineShop.calls.at(-1)?.variables.tags, [APPLIED_TAG, "Bank Deposit"]);
 });

@@ -83,12 +83,37 @@ export function paymentTag(
   return name.replace(/,/g, " ").trim().slice(0, 40) || PAYMENT_TAGS.bank;
 }
 
+// Tag for orders where the customer chose one kind of payment in the pop-up
+// (and got its discount) but paid with another: Shopify doesn't let apps hide
+// every payment method at checkout (its test card gateway, for one).
+export const MISMATCH_TAG = "payment-mismatch";
+
 export function paymentKind(
   order: OrderForDiscount,
   settings: DiscountSettings,
 ): "bank" | "card" | "cod" | null {
   const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
   if (choice === "bank" || choice === "card" || choice === "cod") return choice;
+  return gatewayKind(order, settings);
+}
+
+// True when the pop-up choice was bank transfer or card but the order was
+// paid with a different kind of method.
+export function paidOtherThanChosen(
+  order: OrderForDiscount,
+  settings: DiscountSettings,
+): boolean {
+  const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
+  if (choice !== "bank" && choice !== "card") return false;
+  const paid = gatewayKind(order, settings);
+  return paid !== null && paid !== choice;
+}
+
+// How the order was paid, from its payment method names alone.
+export function gatewayKind(
+  order: OrderForDiscount,
+  settings: DiscountSettings,
+): "bank" | "card" | "cod" | null {
   const used = (order.paymentGatewayNames ?? []).map(normalize);
   if (!used.length) return null;
   const listed = (names: string[]) => used.some((g) => names.map(normalize).includes(g));
@@ -221,21 +246,26 @@ export async function applyDiscount(
 
   const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
   if (choice) {
+    // Chose one way in the pop-up, paid another: tagged with how it was
+    // really paid, and payment-mismatch for the merchant to check.
+    const choiceTags = paidOtherThanChosen(order, settings)
+      ? [MISMATCH_TAG, paymentTag(order, settings, gatewayKind(order, settings))]
+      : [kindTag];
     const discounted =
       settings.enabled &&
       !limit &&
       ((choice === "bank" && settings.bankDiscount) ||
         (choice === "card" && settings.cardDiscount));
     if (!discounted) {
-      await addMissing([kindTag]);
+      await addMissing(choiceTags);
       return { applied: false, reason: "payment method chosen before checkout, no discount" };
     }
     const reason = "payment method chosen before checkout, discount given there";
     if (has.has(APPLIED_TAG)) {
-      await addMissing([kindTag]);
+      await addMissing(choiceTags);
       return { applied: false, reason };
     }
-    await addMissing([APPLIED_TAG, kindTag]);
+    await addMissing([APPLIED_TAG, ...choiceTags]);
     return { applied: false, reason, discountedAtCheckout: true };
   }
 

@@ -56,7 +56,10 @@ export default function Orders() {
             <s-text type="strong">{APPLIED_TAG}</s-text>, so you can also filter
             for them in Orders. Every bank transfer or card order is also tagged
             with how it was paid, such as Bank Deposit, EasyPaisa, Jazz Cash or
-            Credit/Debit card.
+            Credit/Debit card. An order tagged{" "}
+            <s-text type="strong">payment-mismatch</s-text> got the bank
+            transfer discount but was paid another way (Shopify can&apos;t
+            always hide card payments at checkout): check it before you ship.
           </s-paragraph>
           {applied.length ? (
             <OrderTable orders={applied} />
