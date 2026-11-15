@@ -325,6 +325,52 @@ export default function Settings() {
       : { tone: "neutral", text: "0% off" };
   };
 
+  // Cards are one row: the pop-up has one card choice for all of them. Its
+  // switch unlocks once the app knows a card method, which it learns from
+  // orders (apps can't read Shopify's payment settings).
+  const cardNames = methods.filter((name) => kindNow(name) === "card");
+  const cardRow = (
+    <s-grid gridTemplateColumns="2fr 1fr 2fr" gap="base" alignItems="center">
+      {cardNames.map((name) => (
+        <span key={name} style={{ display: "none" }}>
+          <input type="hidden" name="methodName" value={name} />
+          <input type="hidden" name="methodKind" value="card" />
+        </span>
+      ))}
+      <s-stack direction="block" gap="small-100">
+        <s-text type="strong">Credit / debit card</s-text>
+        {cardNames.length ? (
+          <s-text color="subdued">{cardNames.join(", ")}</s-text>
+        ) : (
+          <s-badge tone="warning">Needs a card provider</s-badge>
+        )}
+      </s-stack>
+      <s-badge
+        tone={enabled && cardOn && cardNames.length ? "success" : "neutral"}
+      >
+        {enabled && cardOn && cardNames.length && percent > 0
+          ? `${percent}% off`
+          : "0% off"}
+      </s-badge>
+      <s-switch
+        key={`card-${enabled}-${cardOn}-${cardNames.length}`}
+        label="Discount"
+        details={
+          !cardNames.length
+            ? "Turn on a card provider in Shopify Settings, Payments. This unlocks after your first card order."
+            : !plan.cardDiscount
+              ? "Available on the Unlimited plan."
+              : cardOn
+                ? "On: card payments get the discount."
+                : "Off: card payments pay full price."
+        }
+        defaultChecked={enabled && cardOn && cardNames.length > 0}
+        disabled={!enabled || !plan.cardDiscount || !cardNames.length}
+        onChange={(event) => setCardOn(event.currentTarget.checked)}
+      />
+    </s-grid>
+  );
+
   return (
     <s-page heading="Settings">
       <Modal
@@ -411,89 +457,92 @@ export default function Settings() {
             doneText={`${settings.gateways.length} bank · ${settings.cardGateways.length} card · ${settings.codGateways.length} cash on delivery`}
           >
             <s-stack direction="block" gap="small-200">
-              {methods.map((name) => (
-                <s-grid
-                  key={name}
-                  gridTemplateColumns="2fr 1fr 2fr"
-                  gap="base"
-                  alignItems="center"
-                >
-                  <input type="hidden" name="methodName" value={name} />
-                  <input
-                    type="hidden"
-                    name="methodKind"
-                    value={kindNow(name)}
-                  />
-                  <s-stack
-                    direction="inline"
-                    gap="small-200"
+              {methods
+                .filter((name) => kindNow(name) !== "card")
+                .map((name) => (
+                  <s-grid
+                    key={name}
+                    gridTemplateColumns="2fr 1fr 2fr"
+                    gap="base"
                     alignItems="center"
                   >
-                    <s-text type="strong">{name}</s-text>
-                    {removable(name) && (
-                      <s-button
-                        variant="tertiary"
-                        tone="critical"
-                        onClick={() => ask("remove", name)}
-                      >
-                        Remove
-                      </s-button>
+                    <input type="hidden" name="methodName" value={name} />
+                    <input
+                      type="hidden"
+                      name="methodKind"
+                      value={kindNow(name)}
+                    />
+                    <s-stack
+                      direction="inline"
+                      gap="small-200"
+                      alignItems="center"
+                    >
+                      <s-text type="strong">{name}</s-text>
+                      {removable(name) && (
+                        <s-button
+                          variant="tertiary"
+                          tone="critical"
+                          onClick={() => ask("remove", name)}
+                        >
+                          Remove
+                        </s-button>
+                      )}
+                    </s-stack>
+                    <s-badge tone={outcome(name).tone as "success" | "neutral"}>
+                      {outcome(name).text}
+                    </s-badge>
+                    {kindOf(name) === "card" ? (
+                      // One switch for all cards: the pop-up's card choice
+                      // covers them all, so every card row shows the same.
+                      <s-switch
+                        key={`card-${name}-${enabled}-${cardOn}`}
+                        label="Discount"
+                        details={
+                          !plan.cardDiscount
+                            ? "Available on the Unlimited plan."
+                            : cardOn
+                              ? "On: card payments get the discount."
+                              : "Off: card payments pay full price."
+                        }
+                        defaultChecked={enabled && cardOn}
+                        disabled={!enabled || !plan.cardDiscount}
+                        onChange={(event) =>
+                          setCardOn(event.currentTarget.checked)
+                        }
+                      />
+                    ) : (
+                      // On: a pay-upfront method that gets the discount (the
+                      // pop-up's bank transfer choice). Off: full price, offered
+                      // with cash on delivery.
+                      <s-switch
+                        // Remount on each change: this React version can't
+                        // switch a web component's checked state off itself.
+                        key={`${name}-${kindNow(name)}-${enabled}-${bankOn}-${switchRound}`}
+                        label="Discount"
+                        details={
+                          kindNow(name) === "bank"
+                            ? "On: paying this way gets the discount."
+                            : "Off: full price, like cash on delivery."
+                        }
+                        // Locked, and shown off, while step 1 has the discount
+                        // or bank transfer off; the choice is kept for later.
+                        defaultChecked={
+                          enabled && bankOn && kindNow(name) === "bank"
+                        }
+                        disabled={!enabled || !bankOn}
+                        onChange={(event) =>
+                          ask(
+                            event.currentTarget.checked
+                              ? "discountOn"
+                              : "discountOff",
+                            name,
+                          )
+                        }
+                      />
                     )}
-                  </s-stack>
-                  <s-badge tone={outcome(name).tone as "success" | "neutral"}>
-                    {outcome(name).text}
-                  </s-badge>
-                  {kindOf(name) === "card" ? (
-                    // One switch for all cards: the pop-up's card choice
-                    // covers them all, so every card row shows the same.
-                    <s-switch
-                      key={`card-${name}-${enabled}-${cardOn}`}
-                      label="Discount"
-                      details={
-                        !plan.cardDiscount
-                          ? "Available on the Unlimited plan."
-                          : cardOn
-                            ? "On: card payments get the discount."
-                            : "Off: card payments pay full price."
-                      }
-                      defaultChecked={enabled && cardOn}
-                      disabled={!enabled || !plan.cardDiscount}
-                      onChange={(event) =>
-                        setCardOn(event.currentTarget.checked)
-                      }
-                    />
-                  ) : (
-                    // On: a pay-upfront method that gets the discount (the
-                    // pop-up's bank transfer choice). Off: full price, offered
-                    // with cash on delivery.
-                    <s-switch
-                      // Remount on each change: this React version can't
-                      // switch a web component's checked state off itself.
-                      key={`${name}-${kindNow(name)}-${enabled}-${bankOn}-${switchRound}`}
-                      label="Discount"
-                      details={
-                        kindNow(name) === "bank"
-                          ? "On: paying this way gets the discount."
-                          : "Off: full price, like cash on delivery."
-                      }
-                      // Locked, and shown off, while step 1 has the discount
-                      // or bank transfer off; the choice is kept for later.
-                      defaultChecked={
-                        enabled && bankOn && kindNow(name) === "bank"
-                      }
-                      disabled={!enabled || !bankOn}
-                      onChange={(event) =>
-                        ask(
-                          event.currentTarget.checked
-                            ? "discountOn"
-                            : "discountOff",
-                          name,
-                        )
-                      }
-                    />
-                  )}
-                </s-grid>
-              ))}
+                  </s-grid>
+                ))}
+              {cardRow}
               {!methods.length && (
                 <s-text color="subdued">
                   No payment methods listed yet. Add yours below.
