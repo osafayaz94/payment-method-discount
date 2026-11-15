@@ -352,20 +352,6 @@ export default function Home() {
             addHref={`${themeEditor}?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`}
             addLabel="Add to product pages"
           />
-          <QuickSwitch
-            field="showThankYou"
-            label="Thank-you page amount"
-            optional
-            details="After a bank transfer order, shows the discount and the amount to transfer."
-            image={{
-              src: "/guide/thankyou.png",
-              alt: "The Thank-you page showing the discount and the amount to pay",
-            }}
-            checked={settings.showThankYou}
-            added={active?.thankYou}
-            addHref="shopify://admin/settings/checkout/editor"
-            addLabel="Add in checkout editor"
-          />
         </s-stack>
       </s-section>
 
