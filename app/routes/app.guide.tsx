@@ -55,10 +55,9 @@ export default function Guide() {
       title: "Choose your discount",
       text: (
         <>
-          In this app, open Settings. In step 1, turn on Give the discount, type
-          the percentage (such as {percent}) and make sure Bank transfer is on.
-          Turn on Credit or debit card too if you want card payments to get the
-          discount. Cash on delivery always pays full price.
+          In this app, open Settings. In step 1, turn on Give the discount and
+          type the percentage, such as {percent}. Cash on delivery always pays
+          full price.
         </>
       ),
       links: [{ label: "Open Settings", href: "/app/settings" }],

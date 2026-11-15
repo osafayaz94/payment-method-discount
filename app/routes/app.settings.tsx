@@ -102,12 +102,6 @@ export const action = async ({
   const errors: Record<string, string> = {};
   if (!(percent > 0 && percent <= 100))
     errors.percent = "Enter a number above 0 and up to 100";
-  if (bankDiscount && !gateways.length)
-    errors.who =
-      "Turn on Discount for at least one payment method in step 2, or turn bank transfer off";
-  if (cardDiscount && !cardGateways.length)
-    errors.who =
-      "Card needs a card payment method: set one in step 2, or turn card off";
   if (Object.keys(errors).length) return { ok: false, errors };
 
   const settings: DiscountSettings = {
@@ -174,7 +168,9 @@ export default function Settings() {
   // The preview follows the form as the merchant types, before saving.
   const [percent, setPercent] = useState(settings.percent);
   const [enabled, setEnabled] = useState(settings.enabled);
-  const [bankOn, setBankOn] = useState(settings.bankDiscount && hasBank);
+  // Bank transfer methods always get the discount when their own Discount
+  // switch is on; cards share one switch, on their rows in step 2.
+  const bankOn = true;
   const [cardOn, setCardOn] = useState(
     settings.cardDiscount && plan.cardDiscount && hasCard,
   );
@@ -377,7 +373,7 @@ export default function Settings() {
           <StepCard
             number={1}
             title="Choose your discount"
-            why="How much customers save, and which payment choices get it."
+            why="How much customers save when they pay upfront. Cash on delivery always pays full price."
             done={settings.enabled && discountLive}
             doneText="Active at checkout"
           >
@@ -388,7 +384,9 @@ export default function Settings() {
               defaultChecked={settings.enabled}
               onChange={(event) => setEnabled(event.currentTarget.checked)}
             />
-            <s-grid gridTemplateColumns="1fr 2fr" gap="base" alignItems="start">
+            <input type="hidden" name="bankDiscount" value="on" />
+            {cardOn && <input type="hidden" name="cardDiscount" value="on" />}
+            <s-grid gridTemplateColumns="1fr 2fr" gap="base">
               <s-number-field
                 name="percent"
                 label="Discount"
@@ -402,57 +400,13 @@ export default function Settings() {
                   setPercent(Number(event.currentTarget.value))
                 }
               />
-              <s-stack direction="block" gap="small-300">
-                <s-text type="strong">Who gets it</s-text>
-                {/* With the main switch off, the choices below are locked
-                    and shown off, but kept (hidden inputs) for when it's
-                    turned back on. */}
-                {!enabled && bankOn && (
-                  <input type="hidden" name="bankDiscount" value="on" />
-                )}
-                {!enabled && cardOn && (
-                  <input type="hidden" name="cardDiscount" value="on" />
-                )}
-                <s-switch
-                  key={`bank-${enabled}`}
-                  name={enabled ? "bankDiscount" : undefined}
-                  label="Bank transfer"
-                  details={
-                    hasBank
-                      ? `For ${settings.gateways.join(", ")}.`
-                      : "First enable a bank transfer method, such as Bank Deposit, in Shopify and add it in step 2."
-                  }
-                  defaultChecked={enabled && bankOn}
-                  disabled={!hasBank || !enabled}
-                  onChange={(event) => setBankOn(event.currentTarget.checked)}
-                />
-                <s-switch
-                  key={`card-${enabled}`}
-                  name={enabled ? "cardDiscount" : undefined}
-                  label="Credit or debit card"
-                  details={
-                    !plan.cardDiscount
-                      ? "Available on the Unlimited plan."
-                      : hasCard
-                        ? `For ${settings.cardGateways.join(", ")}. The card is charged the lower amount.`
-                        : "First enable a card payment method in Shopify and add it in step 2."
-                  }
-                  defaultChecked={enabled && cardOn}
-                  disabled={!plan.cardDiscount || !hasCard || !enabled}
-                  onChange={(event) => setCardOn(event.currentTarget.checked)}
-                />
-                {errors?.who && <s-text tone="critical">{errors.who}</s-text>}
-                <s-text color="subdued">
-                  Cash on delivery always pays full price.
-                </s-text>
-              </s-stack>
             </s-grid>
           </StepCard>
 
           <StepCard
             number={2}
             title="List your payment methods"
-            why="Add the payment methods turned on in your store (Shopify Settings, Payments) and say what each one is. Checkout then only shows the methods that match the customer's choice, and step 1 can only discount a kind of method you have."
+            why="The payment methods turned on in your store (Shopify Settings, Payments). Switch on Discount for the ones that should get it; checkout then only shows the methods that match the customer's choice in the pop-up."
             done={hasBank || hasCard}
             doneText={`${settings.gateways.length} bank · ${settings.cardGateways.length} card · ${settings.codGateways.length} cash on delivery`}
           >
@@ -490,9 +444,24 @@ export default function Settings() {
                     {outcome(name).text}
                   </s-badge>
                   {kindOf(name) === "card" ? (
-                    // Card payments are turned on or off for all cards in
-                    // step 1, as the pop-up's Card choice covers them all.
-                    <s-text color="subdued">Card: on or off in step 1</s-text>
+                    // One switch for all cards: the pop-up's card choice
+                    // covers them all, so every card row shows the same.
+                    <s-switch
+                      key={`card-${name}-${enabled}-${cardOn}`}
+                      label="Discount"
+                      details={
+                        !plan.cardDiscount
+                          ? "Available on the Unlimited plan."
+                          : cardOn
+                            ? "On: card payments get the discount."
+                            : "Off: card payments pay full price."
+                      }
+                      defaultChecked={enabled && cardOn}
+                      disabled={!enabled || !plan.cardDiscount}
+                      onChange={(event) =>
+                        setCardOn(event.currentTarget.checked)
+                      }
+                    />
                   ) : (
                     // On: a pay-upfront method that gets the discount (the
                     // pop-up's bank transfer choice). Off: full price, offered
