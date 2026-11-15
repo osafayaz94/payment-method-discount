@@ -11,15 +11,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const base = await loadBase(request);
   return {
     percent: base.settings.percent,
-    method: base.settings.gateways[0] ?? "Bank Deposit",
+    // Every method that gets the discount, as in the pop-up and banner.
+    methods: base.settings.gateways.length
+      ? base.settings.gateways
+      : ["Bank Deposit"],
     privacyUrl: `${process.env.SHOPIFY_APP_URL ?? ""}/privacy`,
   };
 };
 
 export default function Help() {
-  const { percent, method, privacyUrl } = useLoaderData<typeof loader>();
+  const { percent, methods, privacyUrl } = useLoaderData<typeof loader>();
   const shopify = useAppBridge();
-  const checkoutText = `Get ${percent}% off when you pay by ${method}. The discount is applied automatically after you place your order, and we'll email you the final amount to pay.`;
+  // The discount is already in the checkout total; this note says what to do
+  // next (merchants add their account details after it).
+  const listed =
+    methods.length > 1
+      ? `${methods.slice(0, -1).join(", ")} or ${methods.at(-1)}`
+      : methods[0];
+  const checkoutText = `You get ${percent}% off for paying by ${listed}: it's already taken off your total. After placing the order, send the amount to the account below and keep the receipt.`;
 
   return (
     <s-page heading="Help">
@@ -31,14 +40,15 @@ export default function Help() {
         </s-paragraph>
       </s-section>
 
-      <HelpCard percent={percent} method={method} />
+      <HelpCard percent={percent} method={listed} />
 
       <s-section heading="Tell customers at checkout">
         <s-stack direction="block" gap="base">
           <s-paragraph>
-            Optional: in Settings, Payments, open your bank transfer method and
-            paste this into Additional details. Customers then see the offer
-            next to the payment method at checkout.
+            Optional: in Settings, Payments, open each bank transfer method
+            (such as Bank Deposit, Jazz Cash or EasyPaisa), paste this into
+            Additional details and add your account details below it. Customers
+            see it when they choose that method at checkout.
           </s-paragraph>
           <s-box
             padding="base"
