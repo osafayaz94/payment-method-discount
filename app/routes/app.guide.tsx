@@ -17,8 +17,9 @@ type GuideStep = {
   title: string;
   optional?: boolean;
   text: React.ReactNode;
-  image: string;
-  alt: string;
+  // A picture of the step, from public/guide (not every step has one).
+  image?: string;
+  alt?: string;
   links?: { label: string; href: string; newTab?: boolean }[];
 };
 
@@ -34,14 +35,15 @@ export default function Guide() {
       title: "Turn on your payment methods in Shopify",
       text: (
         <>
-          In Shopify, open Settings, then Payments. <b>A</b>: for bank transfer,
-          click + Method under Manual payment methods and add Bank Deposit (with
-          your bank details). <b>B</b>: for credit and debit cards, set up a
-          payment provider. You need at least one of the two.
+          In Shopify, open Settings, then Payments. Under Manual payment
+          methods, click + Method: add Bank Deposit, and with Create custom
+          payment method add any others you take, such as Jazz Cash or
+          EasyPaisa. In each one&apos;s Additional details, write your account
+          details. Keep Cash on Delivery if you offer it.
         </>
       ),
       image: "payments",
-      alt: "Shopify's Payments settings: a payment provider for cards, and manual methods Bank Deposit and Cash on Delivery",
+      alt: "Shopify's Payments settings with manual methods Bank Deposit and Cash on Delivery",
       links: [
         {
           label: "Open payment settings",
@@ -53,37 +55,36 @@ export default function Guide() {
       title: "Choose your discount",
       text: (
         <>
-          In this app, open Settings. In step 1, enter the percentage and turn
-          on who gets it: bank transfer, card, or both. Cash on delivery always
-          pays full price.
+          In this app, open Settings. In step 1, turn on Give the discount, type
+          the percentage (such as {percent}) and make sure Bank transfer is on.
+          Turn on Credit or debit card too if you want card payments to get the
+          discount. Cash on delivery always pays full price.
         </>
       ),
-      image: "discount",
-      alt: "Step 1 of the app's settings: discount percentage and switches for bank transfer and card",
       links: [{ label: "Open Settings", href: "/app/settings" }],
     },
     {
-      title: "List your payment methods",
+      title: "Add your payment methods and switch on their discount",
       text: (
         <>
-          In step 2, say what each payment method is: Bank transfer, Card or
-          Cash on delivery. Methods used on your orders are listed already; add
-          any others with Add a payment method, spelled exactly as at checkout.
+          Step 2 lists your payment methods with a Discount switch each: on
+          gives that method {percent}% off, off means full price, like cash on
+          delivery. Methods used on your orders are listed already. For any
+          other, type its name exactly as at checkout (such as Jazz Cash) and
+          click Add, then switch its Discount on. Methods you added yourself can
+          be removed.
         </>
       ),
-      image: "methods",
-      alt: "Step 2 of the app's settings: each payment method with a dropdown, and a row to add one",
     },
     {
-      title: "Check the preview and save",
+      title: "Check what customers get, then save",
       text: (
         <>
-          Step 3 shows what customers will see with your settings. When it looks
-          right, click Save in the bar at the top of the page.
+          Step 3 is a small table: for each choice in the pop-up, what customers
+          pay and which methods checkout then shows. When it looks right, click
+          Save in the bar at the top of the page.
         </>
       ),
-      image: "preview",
-      alt: "Step 3 of the app's settings: what customers see with each payment choice",
     },
     {
       title: "Turn on the payment pop-up",
@@ -92,7 +93,7 @@ export default function Guide() {
           Click the button below: your theme editor opens on App embeds.{" "}
           <b>1</b> App embeds is selected, <b>2</b> make sure Payment choice
           pop-up is switched on, <b>3</b> click Save. The pop-up is required:
-          it&apos;s how customers choose bank transfer or card, so without it
+          it&apos;s how customers choose bank transfer, so without it
           there&apos;s no discount. Home shows whether it&apos;s on.
         </>
       ),
@@ -110,23 +111,24 @@ export default function Guide() {
       text: (
         <>
           When a customer clicks Check out or Buy it now, the pop-up asks how
-          they&apos;ll pay and shows the amount for each choice. Picking a
-          discounted method takes {percent}% off at checkout, and checkout then
-          only offers that method.
+          they&apos;ll pay. Bank transfer lists your discounted methods and
+          shows the saving; cash on delivery is full price. After choosing bank
+          transfer, checkout only offers those methods, with the discount shown
+          as &quot;Bank Deposit {percent}% off&quot;.
         </>
       ),
       image: "popup",
-      alt: "The pop-up on a product page: bank transfer saves 5%, card and cash on delivery are full price",
+      alt: "The pop-up: bank transfer (Bank Deposit, Jazz Cash, EasyPaisa) saves 5%, cash on delivery is full price",
     },
     {
       title: "Show the saving on product and cart pages",
       optional: true,
       text: (
         <>
-          A banner such as &quot;Pay by Bank Deposit at checkout and save{" "}
-          {percent}%&quot;, with the amount worked out from the price. Click a
-          button below, then Save in the theme editor. You can move the banner
-          where you like.
+          A banner such as &quot;Pay by Bank Deposit, Jazz Cash or EasyPaisa at
+          checkout and save {percent}%&quot;, with the amount worked out from
+          the price. Click a button below, then Save in the theme editor. You
+          can move the banner where you like, and switch it off on Home.
         </>
       ),
       image: "banner",
@@ -143,48 +145,25 @@ export default function Guide() {
       ],
     },
     {
-      title: "Show the amount to pay after ordering",
-      optional: true,
+      title: "Pause or resume from Home",
       text: (
         <>
-          For bank transfer orders, the Thank-you page can show the discount and
-          the amount to transfer. In the checkout editor: <b>1</b> switch to the
-          Thank you page, <b>2</b> click Add app block and choose Payment
-          discount amount, <b>3</b> click Save.
+          Home shows the discount in one line, such as &quot;{percent}% off for
+          Bank Deposit, Jazz Cash, EasyPaisa&quot;, with the main switch to
+          pause or resume it straight away. It also shows whether the pop-up and
+          banner are on your store, and this month&apos;s discounted orders.
         </>
       ),
-      image: "checkout",
-      alt: "The checkout editor's Thank you page with Add app block and the Save button",
-      links: [
-        {
-          label: "Open checkout editor",
-          href: "shopify://admin/settings/checkout/editor",
-        },
-      ],
-    },
-    {
-      title: "Turn things on and off",
-      text: (
-        <>
-          On Home, each switch saves straight away. Discount is the main switch;
-          under it, choose who gets it: bank transfer, card or both. Under On
-          your store, the pop-up is required, and the savings banner and
-          Thank-you amount can be switched on and off. A switch that can&apos;t
-          be used yet says why.
-        </>
-      ),
-      image: "switches",
-      alt: "Home: the Discount switch with bank transfer and card under it, and On your store with the required pop-up, the savings banner and the Thank-you amount",
       links: [{ label: "Open Home", href: "/app" }],
     },
     {
       title: "Place a test order",
       text: (
         <>
-          Open your store, click Buy it now on a product, choose bank transfer
-          (or card) in the pop-up and place the order. It then shows under
-          Orders. If an order was missed, enter its number under Apply to an
-          order.
+          Open your store, click Buy it now on a product, choose Bank transfer
+          in the pop-up and place the order with one of your bank methods. It
+          shows under Orders, and in Shopify the order is tagged with how it was
+          paid, such as Bank Deposit, Jazz Cash or EasyPaisa.
         </>
       ),
       image: "orders",
@@ -200,8 +179,8 @@ export default function Guide() {
     <s-page heading="Step-by-step guide">
       <s-section>
         <s-paragraph>
-          Ten steps from start to your first discounted order: about 10 minutes.
-          Steps marked Optional can be skipped.
+          Nine steps from start to your first discounted order: about 10
+          minutes. Steps marked Optional can be skipped.
         </s-paragraph>
       </s-section>
       {steps.map((step, index) => (
@@ -243,17 +222,19 @@ export default function Guide() {
                 </s-stack>
               </div>
             </div>
-            <img
-              src={`/guide/${step.image}.png`}
-              alt={step.alt}
-              loading="lazy"
-              style={{
-                maxWidth: "100%",
-                display: "block",
-                borderRadius: 8,
-                border: "1px solid #e3e3e3",
-              }}
-            />
+            {step.image && (
+              <img
+                src={`/guide/${step.image}.png`}
+                alt={step.alt}
+                loading="lazy"
+                style={{
+                  maxWidth: "100%",
+                  display: "block",
+                  borderRadius: 8,
+                  border: "1px solid #e3e3e3",
+                }}
+              />
+            )}
           </s-stack>
         </s-section>
       ))}
