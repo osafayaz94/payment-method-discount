@@ -182,13 +182,11 @@ export default function Settings() {
   );
   // Empties "Add a payment method" after each save, ready for the next one.
   const [addRound, setAddRound] = useState(0);
-  const [addCard, setAddCard] = useState(false);
   const [lastResult, setLastResult] = useState(result);
   if (result !== lastResult) {
     setLastResult(result);
     if (result?.ok) {
       setAddRound(addRound + 1);
-      setAddCard(false);
     }
   }
 
@@ -535,36 +533,17 @@ export default function Settings() {
                 </s-text>
               )}
             </s-stack>
-            {/* Name (and card box) side by side, Add below. Add saves the page:
-                the new method joins the list above at 0% off, with its
-                Discount switch off, and the fields empty for the next one. */}
+            {/* Add saves the page: the new method joins the list above at
+                0% off, with its Discount switch off, and the field empties
+                for the next one. */}
             <s-stack key={addRound} direction="block" gap="small-200">
-              <s-grid
-                gridTemplateColumns="1fr 1fr"
-                gap="base"
-                alignItems="start"
-              >
+              <input type="hidden" name="newMethodKind" value="cod" />
+              <s-grid gridTemplateColumns="1fr 1fr" gap="base">
                 <s-text-field
                   name="newMethodName"
                   label="Add a payment method"
                   placeholder="For example JazzCash or EasyPaisa"
                 />
-                <s-stack direction="block" gap="small-200">
-                  <input
-                    type="hidden"
-                    name="newMethodKind"
-                    value={addCard ? "card" : "cod"}
-                  />
-                  <s-checkbox
-                    key={`card-${addRound}-${addCard}`}
-                    label="This is a card payment"
-                    details="Card payments get the discount when Credit or debit card is on in step 1."
-                    defaultChecked={addCard}
-                    onChange={(event) =>
-                      setAddCard(event.currentTarget.checked)
-                    }
-                  />
-                </s-stack>
               </s-grid>
               <s-text color="subdued">
                 Type its name exactly as shown at checkout.
