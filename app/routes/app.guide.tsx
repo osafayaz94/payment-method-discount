@@ -125,10 +125,11 @@ export default function Guide() {
       optional: true,
       text: (
         <>
-          A banner such as &quot;Pay by Bank Deposit, Jazz Cash or EasyPaisa at
-          checkout and save {percent}%&quot;, with the amount worked out from
-          the price. Click a button below, then Save in the theme editor. You
-          can move the banner where you like, and switch it off on Home.
+          A banner such as &quot;Pay by Bank Deposit, Jazz Cash, EasyPaisa,
+          PayPal or Stripe at checkout and save {percent}%&quot;, with the
+          amount worked out from the price. Click a button below, then Save in
+          the theme editor. You can move the banner where you like, and switch
+          it off on Home.
         </>
       ),
       image: "banner",
