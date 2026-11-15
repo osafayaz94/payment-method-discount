@@ -177,9 +177,6 @@ export default function Settings() {
   const [cardOn, setCardOn] = useState(
     settings.cardDiscount && plan.cardDiscount && hasCard,
   );
-  const [showMore, setShowMore] = useState(
-    Boolean(errors?.label || errors?.cardLabel),
-  );
   // Empties "Add a payment method" after each save, ready for the next one.
   const [addRound, setAddRound] = useState(0);
   const [lastResult, setLastResult] = useState(result);
@@ -581,25 +578,11 @@ export default function Settings() {
               cardMethods={methods.filter((name) => kindNow(name) === "card")}
               codMethods={methods.filter((name) => kindNow(name) === "cod")}
             />
-            <s-stack
-              direction="inline"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <s-text color="subdued">
-                Extra settings: discount names, customer emails, combining with
-                other discounts
-              </s-text>
-              <s-button
-                variant="tertiary"
-                icon={showMore ? "chevron-up" : "chevron-down"}
-                onClick={() => setShowMore(!showMore)}
-              >
-                {showMore ? "Hide" : "Show"}
-              </s-button>
-            </s-stack>
-            {/* Hidden rather than removed, so the fields are still saved. */}
-            <div style={{ display: showMore ? "block" : "none" }}>
+            <s-text type="strong">
+              Extra settings: discount names, customer emails, combining with
+              other discounts
+            </s-text>
+            <div>
               <s-stack direction="block" gap="base">
                 <s-grid gridTemplateColumns="1fr 1fr" gap="base">
                   <s-text-field
