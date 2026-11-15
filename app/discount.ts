@@ -92,7 +92,9 @@ export function paymentKind(
   order: OrderForDiscount,
   settings: DiscountSettings,
 ): "bank" | "card" | "cod" | null {
-  const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
+  const choice = order.customAttributes?.find(
+    (a) => a.key === CHOICE_ATTRIBUTE,
+  )?.value;
   if (choice === "bank" || choice === "card" || choice === "cod") return choice;
   return gatewayKind(order, settings);
 }
@@ -103,13 +105,18 @@ export function paidOtherThanChosen(
   order: OrderForDiscount,
   settings: DiscountSettings,
 ): boolean {
-  const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
+  const choice = order.customAttributes?.find(
+    (a) => a.key === CHOICE_ATTRIBUTE,
+  )?.value;
   if (choice !== "bank" && choice !== "card") return false;
   const paid = gatewayKind(order, settings);
   if (paid === null || paid === choice) return false;
   // Paid another upfront way that gets the discount anyway (card with the
   // card discount on, or the other way round): nothing to check.
-  const discounted = paid === "bank" ? settings.bankDiscount : paid === "card" && settings.cardDiscount;
+  const discounted =
+    paid === "bank"
+      ? settings.bankDiscount
+      : paid === "card" && settings.cardDiscount;
   return !discounted;
 }
 
@@ -120,9 +127,13 @@ export function gatewayKind(
 ): "bank" | "card" | "cod" | null {
   const used = (order.paymentGatewayNames ?? []).map(normalize);
   if (!used.length) return null;
-  const listed = (names: string[]) => used.some((g) => names.map(normalize).includes(g));
+  const listed = (names: string[]) =>
+    used.some((g) => names.map(normalize).includes(g));
   if (listed(settings.gateways)) return "bank";
-  if (listed(settings.codGateways) || used.some((g) => /cash|\bcod\b|delivery/.test(g))) {
+  if (
+    listed(settings.codGateways) ||
+    used.some((g) => /cash|\bcod\b|delivery/.test(g))
+  ) {
     return "cod";
   }
   return "card";
@@ -246,11 +257,16 @@ export async function applyDiscount(
   const kindTag = paymentTag(order, settings, kind);
   const has = new Set(order.tags.map((t) => t.toLowerCase()));
   const addMissing = async (tags: (string | null)[]) => {
-    const missing = tags.filter((t): t is string => Boolean(t) && !has.has(t!.toLowerCase()));
-    if (missing.length) await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, missing);
+    const missing = tags.filter(
+      (t): t is string => Boolean(t) && !has.has(t!.toLowerCase()),
+    );
+    if (missing.length)
+      await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, missing);
   };
 
-  const choice = order.customAttributes?.find((a) => a.key === CHOICE_ATTRIBUTE)?.value;
+  const choice = order.customAttributes?.find(
+    (a) => a.key === CHOICE_ATTRIBUTE,
+  )?.value;
   if (choice) {
     // Chose one way in the pop-up, paid another: tagged with how it was
     // really paid, and payment-mismatch for the merchant to check.
@@ -264,9 +280,13 @@ export async function applyDiscount(
         (choice === "card" && settings.cardDiscount));
     if (!discounted) {
       await addMissing(choiceTags);
-      return { applied: false, reason: "payment method chosen before checkout, no discount" };
+      return {
+        applied: false,
+        reason: "payment method chosen before checkout, no discount",
+      };
     }
-    const reason = "payment method chosen before checkout, discount given there";
+    const reason =
+      "payment method chosen before checkout, discount given there";
     if (has.has(APPLIED_TAG)) {
       await addMissing(choiceTags);
       return { applied: false, reason };
@@ -290,7 +310,8 @@ export async function applyDiscount(
       calculated.lineItems.nodes.filter(
         (line: { editableQuantity: number }) => line.editableQuantity > 0,
       );
-    if (!lines.length) return { applied: false, reason: "no unfulfilled items" };
+    if (!lines.length)
+      return { applied: false, reason: "no unfulfilled items" };
 
     for (const line of lines) {
       const added = (
@@ -301,7 +322,7 @@ export async function applyDiscount(
             percentValue: settings.percent,
             description: settings.label.includes("%")
               ? settings.label
-              : `${settings.percent}% off ${settings.label}`,
+              : `${settings.label.replace(/\s*discount\s*$/i, "") || settings.label} ${settings.percent}% off`,
           },
         })
       ).orderEditAddLineItemDiscount;
@@ -319,13 +340,18 @@ export async function applyDiscount(
 
     await addMissing([APPLIED_TAG, kindTag]);
     if (order.tags.includes(FAILED_TAG)) {
-      await changeTags(graphql, REMOVE_TAGS, "tagsRemove", order.id, [FAILED_TAG]);
+      await changeTags(graphql, REMOVE_TAGS, "tagsRemove", order.id, [
+        FAILED_TAG,
+      ]);
     }
-    return { applied: true, total: commit.order.currentTotalPriceSet.shopMoney };
+    return {
+      applied: true,
+      total: commit.order.currentTotalPriceSet.shopMoney,
+    };
   } catch (err) {
-    await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, [FAILED_TAG]).catch(
-      () => {},
-    );
+    await changeTags(graphql, ADD_TAGS, "tagsAdd", order.id, [
+      FAILED_TAG,
+    ]).catch(() => {});
     throw new Error(`${order.name}: ${(err as Error).message}`);
   }
 }
@@ -343,7 +369,8 @@ function assertNoUserErrors(
   payload: { userErrors?: { message: string }[] } | null | undefined,
 ) {
   const errors = payload?.userErrors ?? [];
-  if (errors.length) throw new Error(`${step}: ${errors.map((e) => e.message).join("; ")}`);
+  if (errors.length)
+    throw new Error(`${step}: ${errors.map((e) => e.message).join("; ")}`);
   if (!payload) throw new Error(`${step}: no response`);
 }
 

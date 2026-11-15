@@ -46,7 +46,7 @@
           "orderDiscountsAdd": {
             "candidates": [
               {
-                "message": "5% off Card payment discount",
+                "message": "Card payment 5% off",
                 "targets": [
                   {
                     "orderSubtotal": {

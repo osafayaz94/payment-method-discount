@@ -47,7 +47,7 @@
           "orderDiscountsAdd": {
             "candidates": [
               {
-                "message": "5% off Bank Deposit discount",
+                "message": "Bank Deposit 5% off",
                 "targets": [
                   {
                     "orderSubtotal": {

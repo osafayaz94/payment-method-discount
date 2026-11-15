@@ -149,7 +149,7 @@ test("discounts every unfulfilled item in one edit, then tags the order", async 
     discounts.map((c) => c.variables.lineItemId),
     ["gid://shopify/CalculatedLineItem/1", "gid://shopify/CalculatedLineItem/3"],
   );
-  assert.deepEqual(discounts[0].variables.discount, { percentValue: 5, description: "5% off Bank Deposit discount" });
+  assert.deepEqual(discounts[0].variables.discount, { percentValue: 5, description: "Bank Deposit 5% off" });
   assert.equal(calls.find((c) => c.op === "CommitEdit")!.variables.notifyCustomer, true);
   assert.deepEqual(calls.at(-1), {
     op: "AddTags",

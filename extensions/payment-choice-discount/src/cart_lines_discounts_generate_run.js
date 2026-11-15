@@ -42,14 +42,14 @@ export function cartLinesDiscountsGenerateRun(input) {
         orderDiscountsAdd: {
           candidates: [
             {
-              // Shown at checkout and on the order, as in "5% off Bank
-              // Deposit discount": the % first, as checkout cuts long names
-              // short (left alone if the name already has a %).
+              // Shown at checkout and on the order, as in "Bank Deposit 5%
+              // off": short, as checkout cuts long names. A trailing
+              // "discount" is dropped; a name with its own % is left alone.
               message: !message
                 ? `${settings.percent}% off`
                 : message.includes('%')
                   ? message
-                  : `${settings.percent}% off ${message}`,
+                  : `${message.replace(/\s*discount\s*$/i, '') || message} ${settings.percent}% off`,
               targets: [{orderSubtotal: {excludedCartLineIds: []}}],
               value: {percentage: {value: settings.percent}},
             },
