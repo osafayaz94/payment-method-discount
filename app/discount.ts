@@ -297,7 +297,12 @@ export async function applyDiscount(
         await graphql(ADD_DISCOUNT, {
           id: calculated.id,
           lineItemId: line.id,
-          discount: { percentValue: settings.percent, description: settings.label },
+          discount: {
+            percentValue: settings.percent,
+            description: settings.label.includes("%")
+              ? settings.label
+              : `${settings.label} ${settings.percent}% off`,
+          },
         })
       ).orderEditAddLineItemDiscount;
       assertNoUserErrors(`discount on "${line.title}"`, added);
