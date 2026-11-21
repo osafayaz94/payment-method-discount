@@ -58,6 +58,14 @@ export default function Plans() {
             Yearly billing costs less than paying monthly. You can change or
             cancel your plan at any time.
           </s-paragraph>
+          <s-paragraph color="subdued">
+            Plan charges are non-refundable. They&apos;re charged to your
+            store&apos;s account and appear in your{" "}
+            <s-link href="shopify://admin/settings/billing" target="_top">
+              statement of charges
+            </s-link>
+            .
+          </s-paragraph>
           <s-grid gridTemplateColumns="1fr 1fr" gap="base">
             {keys.map((key) => {
               const current = plan.billing && plan.key === key;
