@@ -494,7 +494,11 @@ export default function Settings() {
           >
             <s-stack direction="block" gap="small-200">
               {methods
-                .filter((name) => kindNow(name) !== "card")
+                // Cards have their own row; cash on delivery isn't listed (it
+                // always pays full price) but is still saved, below.
+                .filter(
+                  (name) => kindNow(name) !== "card" && !isCashOnDelivery(name),
+                )
                 .map((name) => (
                   <s-grid
                     key={name}
@@ -614,6 +618,12 @@ export default function Settings() {
                     )}
                   </s-grid>
                 ))}
+              {methods.filter(isCashOnDelivery).map((name) => (
+                <span key={name} style={{ display: "none" }}>
+                  <input type="hidden" name="methodName" value={name} />
+                  <input type="hidden" name="methodKind" value="cod" />
+                </span>
+              ))}
               {cardRow}
               {!methods.length && (
                 <s-text color="subdued">
