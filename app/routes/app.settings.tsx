@@ -379,10 +379,12 @@ export default function Settings() {
       </s-badge>
       <s-stack direction="block" gap="small-100">
         <s-stack direction="inline" gap="small-200" alignItems="center">
-          <s-text>
-            Discount{" "}
-            <b>{enabled && cardOn && cardNames.length > 0 ? "ON" : "OFF"}</b>
-          </s-text>
+          <div style={{ width: 110 }}>
+            <s-text>
+              Discount{" "}
+              <b>{enabled && cardOn && cardNames.length > 0 ? "ON" : "OFF"}</b>
+            </s-text>
+          </div>
           <s-switch
             key={`card-${enabled}-${cardOn}-${cardNames.length}`}
             label="Discount"
@@ -540,9 +542,11 @@ export default function Settings() {
                           gap="small-200"
                           alignItems="center"
                         >
-                          <s-text>
-                            Discount <b>{enabled && cardOn ? "ON" : "OFF"}</b>
-                          </s-text>
+                          <div style={{ width: 110 }}>
+                            <s-text>
+                              Discount <b>{enabled && cardOn ? "ON" : "OFF"}</b>
+                            </s-text>
+                          </div>
                           <s-switch
                             key={`card-${name}-${enabled}-${cardOn}`}
                             label="Discount"
@@ -572,14 +576,16 @@ export default function Settings() {
                           gap="small-200"
                           alignItems="center"
                         >
-                          <s-text>
-                            Discount{" "}
-                            <b>
-                              {enabled && bankOn && kindNow(name) === "bank"
-                                ? "ON"
-                                : "OFF"}
-                            </b>
-                          </s-text>
+                          <div style={{ width: 110 }}>
+                            <s-text>
+                              Discount{" "}
+                              <b>
+                                {enabled && bankOn && kindNow(name) === "bank"
+                                  ? "ON"
+                                  : "OFF"}
+                              </b>
+                            </s-text>
+                          </div>
                           <s-switch
                             // Remount on each change: this React version can't
                             // switch a web component's checked state off itself.
