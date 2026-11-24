@@ -522,7 +522,7 @@ export default function Settings() {
                         details={
                           kindNow(name) === "bank"
                             ? "On: paying this way gets the discount."
-                            : "Off: full price, like cash on delivery."
+                            : "Off: full price."
                         }
                         // Locked, and shown off, while step 1 has the discount
                         // or bank transfer off; the choice is kept for later.
