@@ -13,7 +13,11 @@ import {
   useNavigation,
 } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { parseGateways, type DiscountSettings } from "../discount";
+import {
+  isCashOnDelivery,
+  parseGateways,
+  type DiscountSettings,
+} from "../discount";
 import { loadBase, loadOrders, saveAndPublish } from "../admin.server";
 import {
   getCheckoutStatus,
@@ -79,7 +83,12 @@ export const action = async ({
   // other), in the same order. A method typed into "Add a payment method"
   // joins the list as the kind chosen next to it.
   const names = form.getAll("methodName").map(String);
-  const kinds = form.getAll("methodKind").map(String);
+  const kinds = form
+    .getAll("methodKind")
+    .map(String)
+    .map((kind, index) =>
+      kind === "bank" && isCashOnDelivery(names[index] ?? "") ? "cod" : kind,
+    );
   const added = parseGateways(String(form.get("newMethodName") ?? ""));
   const addedKind = String(form.get("newMethodKind") ?? "bank");
   const ofKind = (kind: string) => [
@@ -215,7 +224,8 @@ export default function Settings() {
               : "bank";
   // What each method is right now, so its badge follows the dropdown.
   const [kinds, setKinds] = useState<Record<string, string>>({});
-  const kindNow = (name: string) => kinds[name] ?? kindOf(name);
+  const kindNow = (name: string) =>
+    isCashOnDelivery(name) ? "cod" : (kinds[name] ?? kindOf(name));
   const formRef = useRef<HTMLFormElement>(null);
   // Only methods the merchant typed in can be removed: not ones seen on
   // orders, not cash on delivery, and not Shopify's built-in methods.
@@ -577,6 +587,8 @@ export default function Settings() {
                             defaultChecked={
                               enabled && bankOn && kindNow(name) === "bank"
                             }
+                            // Cash on delivery always pays full price.
+                            disabled={isCashOnDelivery(name)}
                             // While Give the discount is off, a click asks to
                             // turn it on first.
                             onChange={(event) =>
@@ -592,9 +604,11 @@ export default function Settings() {
                           />
                         </s-stack>
                         <s-text color="subdued">
-                          {enabled && bankOn && kindNow(name) === "bank"
-                            ? "Paying this way gets the discount."
-                            : "Full price."}
+                          {isCashOnDelivery(name)
+                            ? "Cash on delivery always pays full price."
+                            : enabled && bankOn && kindNow(name) === "bank"
+                              ? "Paying this way gets the discount."
+                              : "Full price."}
                         </s-text>
                       </s-stack>
                     )}

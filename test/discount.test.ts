@@ -9,6 +9,7 @@ import {
   applyDiscount,
   paymentKind,
   paymentTag,
+  isCashOnDelivery,
   parseGateways,
   skipReason,
   type DiscountSettings,
@@ -327,4 +328,13 @@ test("chose bank transfer in the pop-up but paid by card: flagged", async () => 
   const fineShop = fakeShopify(fine);
   await applyDiscount(fineShop.graphql, fine.id, settings);
   assert.deepEqual(fineShop.calls.at(-1)?.variables.tags, [APPLIED_TAG, "Bank Deposit"]);
+});
+
+test("cash on delivery methods are recognised by name", () => {
+  for (const name of ["Cash on Delivery (COD)", "COD", "Pay on delivery", "cash on arrival"]) {
+    assert.equal(isCashOnDelivery(name), true, name);
+  }
+  for (const name of ["Bank Deposit", "Jazz Cash", "EasyPaisa", "PayPal", "Cash App"]) {
+    assert.equal(isCashOnDelivery(name), false, name);
+  }
 });

@@ -1,6 +1,6 @@
 import { getDb } from "./db.server";
 import { getSettingsRow, upsertSettings } from "./store";
-import { applyDiscount, parseGateways, type DiscountSettings, type GraphQL } from "./discount";
+import { isCashOnDelivery, applyDiscount, parseGateways, type DiscountSettings, type GraphQL } from "./discount";
 import { countDiscountedOrder, getPlan, getUsage, type PlanCheck } from "./billing.server";
 import { limitReason, monthIn, type Plan } from "./plans";
 
@@ -90,6 +90,11 @@ export async function getPlanState(
 // Settings as they take effect: what the plan doesn't include, and a
 // discount for a kind of payment method the store hasn't listed, are off.
 export function settingsForPlan(settings: DiscountSettings, plan: Plan): DiscountSettings {
+  // A cash on delivery method listed as discounted is moved back to full price.
+  const cod = settings.gateways.filter(isCashOnDelivery);
+  const gateways = settings.gateways.filter((name) => !isCashOnDelivery(name));
+  const codGateways = [...new Set([...settings.codGateways, ...cod])];
+  settings = { ...settings, gateways, codGateways };
   return {
     ...settings,
     // Required: it's how customers choose a discounted method.

@@ -88,6 +88,11 @@ export function paymentTag(
 // every payment method at checkout (its test card gateway, for one).
 export const MISMATCH_TAG = "payment-mismatch";
 
+// Cash on delivery never gets the discount, whatever the settings say.
+export function isCashOnDelivery(name: string): boolean {
+  return /cash on delivery|\bcod\b|pay on delivery|cash on arrival/i.test(name);
+}
+
 export function paymentKind(
   order: OrderForDiscount,
   settings: DiscountSettings,
