@@ -355,7 +355,7 @@ export default function Settings() {
   // orders (apps can't read Shopify's payment settings).
   const cardNames = methods.filter((name) => kindNow(name) === "card");
   const cardRow = (
-    <s-grid gridTemplateColumns="2fr 1fr 2fr" gap="base" alignItems="center">
+    <s-grid gridTemplateColumns="2fr 1fr 2fr" gap="base" alignItems="start">
       {cardNames.map((name) => (
         <span key={name} style={{ display: "none" }}>
           <input type="hidden" name="methodName" value={name} />
@@ -504,7 +504,7 @@ export default function Settings() {
                     key={name}
                     gridTemplateColumns="2fr 1fr 2fr"
                     gap="base"
-                    alignItems="center"
+                    alignItems="start"
                   >
                     <input type="hidden" name="methodName" value={name} />
                     <input
