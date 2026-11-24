@@ -43,7 +43,7 @@ export default function Guide() {
         </>
       ),
       image: "payments",
-      alt: "Shopify's Payments settings with manual methods Bank Deposit and Cash on Delivery",
+      alt: "Shopify's manual payment methods: Bank Deposit, Cash on Delivery, Jazz Cash and EasyPaisa",
       links: [
         {
           label: "Open payment settings",
@@ -122,18 +122,17 @@ export default function Guide() {
         </>
       ),
       image: "popup",
-      alt: "The pop-up: bank transfer (Bank Deposit, Jazz Cash, EasyPaisa) saves 5%, cash on delivery is full price",
+      alt: "The pop-up: bank transfer (Bank Deposit, EasyPaisa, PayPal) saves 5%, cash on delivery is full price",
     },
     {
       title: "Show the saving on product and cart pages",
       optional: true,
       text: (
         <>
-          A banner such as &quot;Pay by Bank Deposit, Jazz Cash, EasyPaisa,
-          PayPal or Stripe at checkout and save {percent}%&quot;, with the
-          amount worked out from the price. Click a button below, then Save in
-          the theme editor. You can move the banner where you like, and switch
-          it off on Home.
+          A banner such as &quot;Pay by Bank Deposit, EasyPaisa or PayPal at
+          checkout and save {percent}%&quot;, with the amount worked out from
+          the price. Click a button below, then Save in the theme editor. You
+          can move the banner where you like, and switch it off on Home.
         </>
       ),
       image: "banner",
