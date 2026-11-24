@@ -352,22 +352,28 @@ export default function Settings() {
           ? `${percent}% off`
           : "0% off"}
       </s-badge>
-      <s-switch
-        key={`card-${enabled}-${cardOn}-${cardNames.length}`}
-        label="Discount"
-        details={
-          !cardNames.length
+      <s-stack direction="block" gap="small-100">
+        <s-stack direction="inline" gap="small-200" alignItems="center">
+          <s-text>Discount</s-text>
+          <s-switch
+            key={`card-${enabled}-${cardOn}-${cardNames.length}`}
+            label="Discount"
+            labelAccessibilityVisibility="exclusive"
+            defaultChecked={enabled && cardOn && cardNames.length > 0}
+            disabled={!enabled || !plan.cardDiscount || !cardNames.length}
+            onChange={(event) => setCardOn(event.currentTarget.checked)}
+          />
+        </s-stack>
+        <s-text color="subdued">
+          {!cardNames.length
             ? "Turn on a card provider in Shopify Settings, Payments. This unlocks after your first card order."
             : !plan.cardDiscount
               ? "Available on the Unlimited plan."
               : cardOn
                 ? "On: card payments get the discount."
-                : "Off: card payments pay full price."
-        }
-        defaultChecked={enabled && cardOn && cardNames.length > 0}
-        disabled={!enabled || !plan.cardDiscount || !cardNames.length}
-        onChange={(event) => setCardOn(event.currentTarget.checked)}
-      />
+                : "Off: card payments pay full price."}
+        </s-text>
+      </s-stack>
     </s-grid>
   );
 
@@ -494,51 +500,71 @@ export default function Settings() {
                     {kindOf(name) === "card" ? (
                       // One switch for all cards: the pop-up's card choice
                       // covers them all, so every card row shows the same.
-                      <s-switch
-                        key={`card-${name}-${enabled}-${cardOn}`}
-                        label="Discount"
-                        details={
-                          !plan.cardDiscount
+                      <s-stack direction="block" gap="small-100">
+                        <s-stack
+                          direction="inline"
+                          gap="small-200"
+                          alignItems="center"
+                        >
+                          <s-text>Discount</s-text>
+                          <s-switch
+                            key={`card-${name}-${enabled}-${cardOn}`}
+                            label="Discount"
+                            labelAccessibilityVisibility="exclusive"
+                            defaultChecked={enabled && cardOn}
+                            disabled={!enabled || !plan.cardDiscount}
+                            onChange={(event) =>
+                              setCardOn(event.currentTarget.checked)
+                            }
+                          />
+                        </s-stack>
+                        <s-text color="subdued">
+                          {!plan.cardDiscount
                             ? "Available on the Unlimited plan."
                             : cardOn
                               ? "On: card payments get the discount."
-                              : "Off: card payments pay full price."
-                        }
-                        defaultChecked={enabled && cardOn}
-                        disabled={!enabled || !plan.cardDiscount}
-                        onChange={(event) =>
-                          setCardOn(event.currentTarget.checked)
-                        }
-                      />
+                              : "Off: card payments pay full price."}
+                        </s-text>
+                      </s-stack>
                     ) : (
                       // On: a pay-upfront method that gets the discount (the
                       // pop-up's bank transfer choice). Off: full price, offered
                       // with cash on delivery.
-                      <s-switch
-                        // Remount on each change: this React version can't
-                        // switch a web component's checked state off itself.
-                        key={`${name}-${kindNow(name)}-${enabled}-${bankOn}-${switchRound}`}
-                        label="Discount"
-                        details={
-                          kindNow(name) === "bank"
+                      <s-stack direction="block" gap="small-100">
+                        <s-stack
+                          direction="inline"
+                          gap="small-200"
+                          alignItems="center"
+                        >
+                          <s-text>Discount</s-text>
+                          <s-switch
+                            // Remount on each change: this React version can't
+                            // switch a web component's checked state off itself.
+                            key={`${name}-${kindNow(name)}-${enabled}-${bankOn}-${switchRound}`}
+                            label="Discount"
+                            labelAccessibilityVisibility="exclusive"
+                            // Locked, and shown off, while step 1 has the discount
+                            // or bank transfer off; the choice is kept for later.
+                            defaultChecked={
+                              enabled && bankOn && kindNow(name) === "bank"
+                            }
+                            disabled={!enabled || !bankOn}
+                            onChange={(event) =>
+                              ask(
+                                event.currentTarget.checked
+                                  ? "discountOn"
+                                  : "discountOff",
+                                name,
+                              )
+                            }
+                          />
+                        </s-stack>
+                        <s-text color="subdued">
+                          {kindNow(name) === "bank"
                             ? "On: paying this way gets the discount."
-                            : "Off: full price."
-                        }
-                        // Locked, and shown off, while step 1 has the discount
-                        // or bank transfer off; the choice is kept for later.
-                        defaultChecked={
-                          enabled && bankOn && kindNow(name) === "bank"
-                        }
-                        disabled={!enabled || !bankOn}
-                        onChange={(event) =>
-                          ask(
-                            event.currentTarget.checked
-                              ? "discountOn"
-                              : "discountOff",
-                            name,
-                          )
-                        }
-                      />
+                            : "Off: full price."}
+                        </s-text>
+                      </s-stack>
                     )}
                   </s-grid>
                 ))}
