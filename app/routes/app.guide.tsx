@@ -75,6 +75,8 @@ export default function Guide() {
           Discount switch, on their row once your store has a card method.
         </>
       ),
+      image: "methods",
+      alt: "Step 2 of Settings: each payment method with its discount and a Discount ON or OFF switch",
     },
     {
       title: "Check what customers get, then save",
@@ -85,6 +87,8 @@ export default function Guide() {
           Save in the bar at the top of the page.
         </>
       ),
+      image: "preview",
+      alt: "Step 3 of Settings: a table of each pop-up choice, what customers pay and the methods checkout shows",
     },
     {
       title: "Turn on the payment pop-up",
@@ -155,6 +159,8 @@ export default function Guide() {
           banner are on your store, and this month&apos;s discounted orders.
         </>
       ),
+      image: "switches",
+      alt: "Home: the discount summary with its on/off switch, and the pop-up and banner on your store",
       links: [{ label: "Open Home", href: "/app" }],
     },
     {
