@@ -234,7 +234,11 @@ export function HelpCard({
   const questions = [
     {
       q: "Why don't I see the discount at checkout?",
-      a: "The customer has to pick bank transfer (or card, if turned on) in the pop-up before checkout. Check that the pop-up is turned on in Get started.",
+      a: "The customer has to pick bank transfer (or card, if turned on) in the pop-up before checkout. On Home, under On your store, check that the payment pop-up is on in your theme, and in Settings that Give the discount and the method's Discount switch are on.",
+    },
+    {
+      q: "How do I add Jazz Cash, EasyPaisa or another method?",
+      a: "First add it in Shopify: Settings, Payments, + Method under Manual payment methods, then Create custom payment method. Then in this app's Settings, step 2, type the same name, click Add and switch its Discount on.",
     },
     {
       q: "Can customers still choose cash on delivery?",
@@ -247,6 +251,10 @@ export function HelpCard({
     {
       q: "A bank transfer order didn't get the discount",
       a: `Orders paid by ${method} that skipped the pop-up get ${percent}% off after ordering, if they're still unpaid. For anything missed, use Apply to an order.`,
+    },
+    {
+      q: "Why does checkout still show card payments after choosing bank transfer?",
+      a: "Shopify doesn't let apps hide every payment method, such as its own test card gateway. If a customer gets the bank transfer discount but pays another way that doesn't get it, the order is tagged payment-mismatch so you can check it.",
     },
   ];
   return (
