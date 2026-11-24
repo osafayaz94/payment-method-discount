@@ -658,7 +658,7 @@ export default function Settings() {
 
           <StepCard
             number={3}
-            title="Check what customers see, then save"
+            title="Check what customers see"
             why="What customers get with the settings above. It updates as you change them."
           >
             <CheckoutPreview
@@ -669,23 +669,24 @@ export default function Settings() {
               cardMethods={methods.filter((name) => kindNow(name) === "card")}
               codMethods={methods.filter((name) => kindNow(name) === "cod")}
             />
-            <s-text type="strong">Combining with other discounts</s-text>
-            <div>
-              <s-stack direction="block" gap="base">
-                <s-text color="subdued">Can be used together with:</s-text>
-                <s-switch
-                  name="combineProduct"
-                  label="Product discounts and sale prices"
-                  defaultChecked={combinesWith.productDiscounts}
-                />
-                <s-switch
-                  name="combineOrder"
-                  label="Other order discounts"
-                  details="Only those that also allow combining."
-                  defaultChecked={combinesWith.orderDiscounts}
-                />
-              </s-stack>
-            </div>
+          </StepCard>
+
+          <StepCard
+            number={4}
+            title="Combine with other discounts"
+            why="Whether this discount can be used together with your other discounts. Save any changes with the bar at the top of the page."
+          >
+            <s-switch
+              name="combineProduct"
+              label="Product discounts and sale prices"
+              defaultChecked={combinesWith.productDiscounts}
+            />
+            <s-switch
+              name="combineOrder"
+              label="Other order discounts"
+              details="Only those that also allow combining."
+              defaultChecked={combinesWith.orderDiscounts}
+            />
           </StepCard>
         </s-stack>
       </Form>
