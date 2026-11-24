@@ -171,6 +171,13 @@ export default function Home() {
         ? { color: BRAND.amber, text: "Needs setup" }
         : { color: BRAND.green, text: "Active" };
 
+  // Every method that gets the discount, as the banner itself names them:
+  // "Bank Deposit, Jazz Cash or EasyPaisa".
+  const bannerNames = settings.bankDiscount ? settings.gateways : [];
+  const bannerMethods =
+    bannerNames.length > 1
+      ? `${bannerNames.slice(0, -1).join(", ")} or ${bannerNames.at(-1)}`
+      : (bannerNames[0] ?? method);
   const themeEditor = `shopify://admin/themes/current/editor`;
   const steps = [
     {
@@ -286,7 +293,7 @@ export default function Home() {
             field="showBanner"
             label="Savings banner"
             optional
-            details={`Tells shoppers about the saving before they check out: "Pay by ${method} at checkout and save ${settings.percent}%", on product and cart pages.`}
+            details={`Tells shoppers about the saving before they check out: "Pay by ${bannerMethods} at checkout and save ${settings.percent}%", on product and cart pages.`}
             image={{
               src: "/guide/banner.png",
               alt: "A product page with the savings banner under the price",
