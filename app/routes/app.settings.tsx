@@ -354,7 +354,10 @@ export default function Settings() {
       </s-badge>
       <s-stack direction="block" gap="small-100">
         <s-stack direction="inline" gap="small-200" alignItems="center">
-          <s-text>Discount</s-text>
+          <s-text>
+            Discount{" "}
+            <b>{enabled && cardOn && cardNames.length > 0 ? "ON" : "OFF"}</b>
+          </s-text>
           <s-switch
             key={`card-${enabled}-${cardOn}-${cardNames.length}`}
             label="Discount"
@@ -369,9 +372,9 @@ export default function Settings() {
             ? "Turn on a card provider in Shopify Settings, Payments. This unlocks after your first card order."
             : !plan.cardDiscount
               ? "Available on the Unlimited plan."
-              : cardOn
-                ? "On: card payments get the discount."
-                : "Off: card payments pay full price."}
+              : enabled && cardOn
+                ? "Card payments get the discount."
+                : "Full price."}
         </s-text>
       </s-stack>
     </s-grid>
@@ -506,7 +509,9 @@ export default function Settings() {
                           gap="small-200"
                           alignItems="center"
                         >
-                          <s-text>Discount</s-text>
+                          <s-text>
+                            Discount <b>{enabled && cardOn ? "ON" : "OFF"}</b>
+                          </s-text>
                           <s-switch
                             key={`card-${name}-${enabled}-${cardOn}`}
                             label="Discount"
@@ -521,9 +526,9 @@ export default function Settings() {
                         <s-text color="subdued">
                           {!plan.cardDiscount
                             ? "Available on the Unlimited plan."
-                            : cardOn
-                              ? "On: card payments get the discount."
-                              : "Off: card payments pay full price."}
+                            : enabled && cardOn
+                              ? "Card payments get the discount."
+                              : "Full price."}
                         </s-text>
                       </s-stack>
                     ) : (
@@ -536,7 +541,14 @@ export default function Settings() {
                           gap="small-200"
                           alignItems="center"
                         >
-                          <s-text>Discount</s-text>
+                          <s-text>
+                            Discount{" "}
+                            <b>
+                              {enabled && bankOn && kindNow(name) === "bank"
+                                ? "ON"
+                                : "OFF"}
+                            </b>
+                          </s-text>
                           <s-switch
                             // Remount on each change: this React version can't
                             // switch a web component's checked state off itself.
@@ -560,9 +572,9 @@ export default function Settings() {
                           />
                         </s-stack>
                         <s-text color="subdued">
-                          {kindNow(name) === "bank"
-                            ? "On: paying this way gets the discount."
-                            : "Off: full price."}
+                          {enabled && bankOn && kindNow(name) === "bank"
+                            ? "Paying this way gets the discount."
+                            : "Full price."}
                         </s-text>
                       </s-stack>
                     )}
