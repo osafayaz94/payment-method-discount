@@ -231,7 +231,7 @@ export default function Settings() {
   // Adding and removing a method are confirmed in a Shopify admin pop-up.
   const shopify = useAppBridge();
   type ConfirmAction =
-    "add" | "remove" | "discountOn" | "discountOff" | "percent";
+    "add" | "remove" | "discountOn" | "discountOff" | "percent" | "enableMain";
   // Set once a change of percentage is confirmed, so that submit goes through.
   const percentConfirmed = useRef(false);
   const [confirm, setConfirm] = useState<{
@@ -267,6 +267,14 @@ export default function Settings() {
       const kind = confirm.action === "discountOn" ? "bank" : "cod";
       flushSync(() => setKinds((now) => ({ ...now, [confirm.name]: kind })));
       formRef.current?.requestSubmit();
+    } else if (confirm?.action === "enableMain") {
+      // Turns on Give the discount and this method's discount, and saves.
+      const name = confirm.name;
+      flushSync(() => {
+        setEnabled(true);
+        setKinds((now) => ({ ...now, [name]: "bank" }));
+      });
+      formRef.current?.requestSubmit();
     } else {
       if (confirm?.action === "percent") percentConfirmed.current = true;
       formRef.current?.requestSubmit();
@@ -290,26 +298,33 @@ export default function Settings() {
             button: "Save",
             critical: false,
           }
-        : confirm.action === "discountOn"
+        : confirm.action === "enableMain"
           ? {
-              title: `Turn on ${percentText} off for ${confirm.name}?`,
-              body: `Customers who pay with ${confirm.name} will get ${percentText} off.`,
+              title: "Turn on the discount first?",
+              body: `Give the discount is off, so no payment method gets a discount right now. Turn it on, with ${percentText} off for ${confirm.name}?`,
               button: "Turn on",
               critical: false,
             }
-          : confirm.action === "discountOff"
+          : confirm.action === "discountOn"
             ? {
-                title: `Turn off the discount for ${confirm.name}?`,
-                body: `Customers who pay with ${confirm.name} will pay full price.`,
-                button: "Turn off",
-                critical: true,
-              }
-            : {
-                title: `Add ${confirm.name}?`,
-                body: null,
-                button: "Add",
+                title: `Turn on ${percentText} off for ${confirm.name}?`,
+                body: `Customers who pay with ${confirm.name} will get ${percentText} off.`,
+                button: "Turn on",
                 critical: false,
-              };
+              }
+            : confirm.action === "discountOff"
+              ? {
+                  title: `Turn off the discount for ${confirm.name}?`,
+                  body: `Customers who pay with ${confirm.name} will pay full price.`,
+                  button: "Turn off",
+                  critical: true,
+                }
+              : {
+                  title: `Add ${confirm.name}?`,
+                  body: null,
+                  button: "Add",
+                  critical: false,
+                };
   // What a customer paying this way gets, with step 1 as it stands.
   const outcome = (name: string) => {
     const kind = kindNow(name);
@@ -433,10 +448,12 @@ export default function Settings() {
             doneText="Active at checkout"
           >
             <s-switch
+              // Remounts when turned on from a payment method's pop-up.
+              key={`enabled-${enabled}`}
               name="enabled"
               label="Give the discount"
               details="Turn off to stop every discount straight away."
-              defaultChecked={settings.enabled}
+              defaultChecked={enabled}
               onChange={(event) => setEnabled(event.currentTarget.checked)}
             />
             <input type="hidden" name="bankDiscount" value="on" />
@@ -560,12 +577,15 @@ export default function Settings() {
                             defaultChecked={
                               enabled && bankOn && kindNow(name) === "bank"
                             }
-                            disabled={!enabled || !bankOn}
+                            // While Give the discount is off, a click asks to
+                            // turn it on first.
                             onChange={(event) =>
                               ask(
-                                event.currentTarget.checked
-                                  ? "discountOn"
-                                  : "discountOff",
+                                !enabled
+                                  ? "enableMain"
+                                  : event.currentTarget.checked
+                                    ? "discountOn"
+                                    : "discountOff",
                                 name,
                               )
                             }
