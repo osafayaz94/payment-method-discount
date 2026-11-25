@@ -120,25 +120,28 @@ Suggested answers to the data protection questions:
 
 ## 6. Testing instructions for the reviewers
 
-> 1. Install the app on your test store and open it from Apps.
-> 2. The "Get started" checklist shows the setup. In Settings → Payments, add
->    a manual payment method named **Bank Deposit** and one named **Cash on
->    Delivery (COD)** (or tick your own method names under Payment methods),
->    then click Save in the app.
-> 3. Click **Turn on pop-up**: the theme editor opens with the app embed
->    "Payment choice pop-up" switched on. Click Save in the theme editor.
-> 4. In the online store, open a product and click **Buy it now**. A pop-up
->    asks "How would you like to pay?" and shows the amount for each method.
->    Choose **Bank transfer** and continue: checkout shows the 5% discount
->    and only offers Bank Deposit. Place the order.
-> 5. Repeat with **Cash on Delivery**: checkout shows the full price and only
->    offers cash on delivery.
-> 6. Back in the app, the order appears under Discounted orders, and the
->    checklist shows the test order step as done.
+> 1. In Shopify, go to Settings > Payments > Manual payment methods and add
+>    Bank Deposit and Cash on Delivery (COD).
+> 2. Install the app and open it from Apps. In Settings, step 1, turn on Give
+>    the discount and set 5%. In step 2, switch Discount ON
+>    for Bank Deposit. Click Save in the bar at the top.
+> 3. Open the Guide (or Home) and click Turn on pop-up. The theme editor
+>    opens with "Payment choice pop-up" already switched on; click Save.
+> 4. In the online store, open a product and click Buy it now. The pop-up
+>    asks "How would you like to pay?" and shows the total for each choice.
+>    Choose Bank transfer: checkout shows "Bank Deposit 5% off" and only
+>    offers Bank Deposit. Place the order.
+> 5. Repeat and choose Cash on Delivery: checkout shows the full price and
+>    only offers Cash on Delivery.
+> 6. In Shopify Orders, the discounted order is tagged "Bank Deposit". It also
+>    appears on the app's Orders page.
 >
-> The pop-up hides express buttons (Shop Pay, PayPal) by default, because
-> they skip the payment choice; merchants can show them again in the
-> embed's settings. Nothing else on the storefront or checkout is changed.
+> Plans: Free covers 10 discounted orders a month; Unlimited is $4.99/month
+> or $49/year through Shopify's plan page (free on development stores).
+> The pop-up hides express buttons (Shop Pay, PayPal) by default because they
+> skip the payment choice; merchants can show them in the embed's settings.
+> The optional savings banner is added from the Guide. Nothing else on the
+> storefront or checkout is changed.
 
 ## 7. Demo screencast (2–3 minutes, English)
 
