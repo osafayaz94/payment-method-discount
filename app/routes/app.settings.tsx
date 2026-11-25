@@ -492,7 +492,7 @@ export default function Settings() {
             title="List your payment methods"
             why="The payment methods turned on in your store (Shopify Settings, Payments). Switch on Discount for the ones that should get it; checkout then only shows the methods that match the customer's choice in the pop-up."
             done={hasBank || hasCard}
-            doneText={`${settings.gateways.length} bank · ${settings.cardGateways.length} card · ${settings.codGateways.length} cash on delivery`}
+            doneText={`${settings.gateways.length + (cardOn ? settings.cardGateways.length : 0)} with discount · ${settings.codGateways.length + (cardOn ? 0 : settings.cardGateways.length)} full price`}
           >
             <s-stack direction="block" gap="small-200">
               {methods
