@@ -3,6 +3,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
+import { useEffect, useRef } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadBase, loadOrders } from "../admin.server";
@@ -302,6 +303,7 @@ export default function Home() {
             added={active?.banner}
             addHref={`${themeEditor}?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`}
             addLabel="Add to product pages"
+            openWhenOn={`${themeEditor}?template=product`}
           />
         </s-stack>
       </s-section>
@@ -344,6 +346,7 @@ function QuickSwitch({
   addLabel,
   optional = false,
   image,
+  openWhenOn,
 }: {
   field: SwitchField;
   label: string;
@@ -355,9 +358,18 @@ function QuickSwitch({
   added?: boolean;
   addHref?: string;
   addLabel?: string;
+  // Where to take the merchant once the switch is turned on and saved.
+  openWhenOn?: string;
 }) {
   const fetcher = useFetcher<ActionResult>();
   useToastResult(fetcher.data);
+  const turnedOn = useRef(false);
+  useEffect(() => {
+    if (openWhenOn && turnedOn.current && fetcher.data?.ok) {
+      turnedOn.current = false;
+      open(openWhenOn, "_top");
+    }
+  }, [fetcher.data, openWhenOn]);
   const pending = fetcher.formData?.get("value");
   const on = pending ? pending === "on" : checked;
   const needsAdding = addHref !== undefined && added === false;
@@ -387,7 +399,8 @@ function QuickSwitch({
                 disabled={
                   Boolean(locked) || needsAdding || fetcher.state !== "idle"
                 }
-                onChange={(event) =>
+                onChange={(event) => {
+                  turnedOn.current = event.currentTarget.checked;
                   fetcher.submit(
                     {
                       intent: "toggle",
@@ -395,8 +408,8 @@ function QuickSwitch({
                       value: event.currentTarget.checked ? "on" : "off",
                     },
                     { method: "post" },
-                  )
-                }
+                  );
+                }}
               />
             </s-stack>
             <s-text color="subdued">{details}</s-text>
