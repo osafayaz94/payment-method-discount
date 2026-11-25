@@ -43,7 +43,7 @@ export default function Guide() {
         </>
       ),
       image: "payments",
-      alt: "Shopify's manual payment methods: Bank Deposit, Cash on Delivery, Jazz Cash and EasyPaisa",
+      alt: "Shopify's manual payment methods: Bank Deposit, Cash on Delivery, EasyPaisa, PayPal and PayTm",
       links: [
         {
           label: "Open payment settings",
