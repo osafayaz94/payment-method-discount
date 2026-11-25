@@ -25,6 +25,7 @@ import {
   useActivations,
   useToastResult,
   type ActionResult,
+  GUIDE_IMAGES_VERSION,
 } from "../components/ui";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -474,7 +475,7 @@ function PopUpRow({ on, href }: { on: boolean | undefined; href: string }) {
         </div>
         <Thumbnail
           src="/guide/popup.png"
-          alt="The pop-up: bank transfer saves 5%, card and cash on delivery are full price"
+          alt="The pop-up: bank transfer saves 5%, cash on delivery is full price"
         />
       </div>
     </s-box>
@@ -492,7 +493,7 @@ function Thumbnail({ src, alt }: { src: string; alt: string }) {
       style={{ flexShrink: 0 }}
     >
       <img
-        src={src}
+        src={`${src}?v=${GUIDE_IMAGES_VERSION}`}
         alt={alt}
         style={{
           width: 180,

@@ -2,7 +2,7 @@ import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { loadBase } from "../admin.server";
-import { StepMark } from "../components/ui";
+import { GUIDE_IMAGES_VERSION, StepMark } from "../components/ui";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const base = await loadBase(request);
@@ -12,9 +12,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     percent: base.settings.percent,
   };
 };
-
-// Change this when a guide picture is replaced, so browsers load the new one.
-const IMAGES_VERSION = "2026-11-25c";
 
 type GuideStep = {
   title: string;
@@ -165,7 +162,7 @@ export default function Guide() {
         </>
       ),
       image: "popup",
-      alt: "The pop-up: bank transfer (Bank Deposit, EasyPaisa, PayPal) saves 5%, cash on delivery is full price",
+      alt: "The pop-up: bank transfer (Bank Deposit, PayPal, Easy Paisa, PayTm) saves 5%, cash on delivery is full price",
     },
     {
       title: "Pause or resume from Home",
@@ -249,7 +246,7 @@ export default function Guide() {
             </div>
             {step.image && (
               <img
-                src={`/guide/${step.image}.png?v=${IMAGES_VERSION}`}
+                src={`/guide/${step.image}.png?v=${GUIDE_IMAGES_VERSION}`}
                 alt={step.alt}
                 loading="lazy"
                 style={{

@@ -296,6 +296,10 @@ export function discountedMethods(
   return names.join(" and ") || "no payment method yet";
 }
 
+// Change this when a picture in public/guide is replaced, so browsers load
+// the new one (the Guide and Home show them).
+export const GUIDE_IMAGES_VERSION = "2026-11-25d";
+
 // The app's own colours (navy and gold), used for its custom cards;
 // everything else is standard Polaris.
 export const BRAND = {
