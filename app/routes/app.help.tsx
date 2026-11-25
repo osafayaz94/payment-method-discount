@@ -46,7 +46,7 @@ export default function Help() {
         <s-stack direction="block" gap="base">
           <s-paragraph>
             Optional: in Settings, Payments, open each bank transfer method
-            (such as Bank Deposit, Jazz Cash or EasyPaisa), paste this into
+            (such as Bank Deposit, Jazz Cash or PayTm), paste this into
             Additional details and add your account details below it. Customers
             see it when they choose that method at checkout.
           </s-paragraph>

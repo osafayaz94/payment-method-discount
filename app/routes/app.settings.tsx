@@ -646,7 +646,7 @@ export default function Settings() {
                 <s-text-field
                   name="newMethodName"
                   label="Add a payment method"
-                  placeholder="For example JazzCash or EasyPaisa"
+                  placeholder="For example JazzCash or PayTm"
                 />
               </s-grid>
               <s-text color="subdued">

@@ -37,9 +37,9 @@ export default function Guide() {
         <>
           In Shopify, open Settings, then Payments. Under Manual payment
           methods, click + Method: add Bank Deposit, and with Create custom
-          payment method add any others you take, such as Jazz Cash or
-          EasyPaisa. In each one&apos;s Additional details, write your account
-          details. Keep Cash on Delivery if you offer it.
+          payment method add any others you take, such as Jazz Cash or PayTm. In
+          each one&apos;s Additional details, write your account details. Keep
+          Cash on Delivery if you offer it.
         </>
       ),
       image: "payments",
@@ -70,9 +70,9 @@ export default function Guide() {
           gives that method {percent}% off, off means full price, like cash on
           delivery. Methods used on your orders are listed already. For any
           other, type its name exactly as at checkout (such as PayPal, Stripe,
-          JazzCash or EasyPaisa) and click Add, then switch its Discount on.
-          Methods you added yourself can be removed. Card payments share one
-          Discount switch, on their row once your store has a card method.
+          JazzCash or PayTm) and click Add, then switch its Discount on. Methods
+          you added yourself can be removed. Card payments share one Discount
+          switch, on their row once your store has a card method.
         </>
       ),
       image: "methods",
@@ -153,9 +153,9 @@ export default function Guide() {
       text: (
         <>
           Home shows the discount in one line, such as &quot;{percent}% off for
-          Bank Deposit, Jazz Cash, EasyPaisa&quot;, with the main switch to
-          pause or resume it straight away. It also shows whether the pop-up and
-          banner are on your store, and this month&apos;s discounted orders.
+          Bank Deposit, Jazz Cash, PayTm&quot;, with the main switch to pause or
+          resume it straight away. It also shows whether the pop-up and banner
+          are on your store, and this month&apos;s discounted orders.
         </>
       ),
       image: "switches",
@@ -169,7 +169,7 @@ export default function Guide() {
           Open your store, click Buy it now on a product, choose Bank transfer
           in the pop-up and place the order with one of your bank methods. It
           shows under Orders, and in Shopify the order is tagged with how it was
-          paid, such as Bank Deposit, Jazz Cash or EasyPaisa.
+          paid, such as Bank Deposit, Jazz Cash or PayTm.
         </>
       ),
       image: "orders",

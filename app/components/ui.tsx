@@ -237,7 +237,7 @@ export function HelpCard({
       a: "The customer has to pick bank transfer (or card, if turned on) in the pop-up before checkout. On Home, under On your store, check that the payment pop-up is on in your theme, and in Settings that Give the discount and the method's Discount switch are on.",
     },
     {
-      q: "How do I add Jazz Cash, EasyPaisa or another method?",
+      q: "How do I add Jazz Cash, PayTm or another method?",
       a: "First add it in Shopify: Settings, Payments, + Method under Manual payment methods, then Create custom payment method. Then in this app's Settings, step 2, type the same name, click Add and switch its Discount on.",
     },
     {

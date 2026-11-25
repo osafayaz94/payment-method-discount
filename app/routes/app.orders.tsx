@@ -55,7 +55,7 @@ export default function Orders() {
             {used} discounted this month. Orders the app discounts are tagged{" "}
             <s-text type="strong">{APPLIED_TAG}</s-text>, so you can also filter
             for them in Orders. Every bank transfer or card order is also tagged
-            with how it was paid, such as Bank Deposit, EasyPaisa, Jazz Cash or
+            with how it was paid, such as Bank Deposit, PayTm, Jazz Cash or
             Credit/Debit card. An order tagged{" "}
             <s-text type="strong">payment-mismatch</s-text> got the bank
             transfer discount but was paid a way that doesn&apos;t get it, such
