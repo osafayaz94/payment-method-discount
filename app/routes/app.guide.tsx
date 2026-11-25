@@ -13,6 +13,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+// Change this when a guide picture is replaced, so browsers load the new one.
+const IMAGES_VERSION = "2026-11-25";
+
 type GuideStep = {
   title: string;
   optional?: boolean;
@@ -232,7 +235,7 @@ export default function Guide() {
             </div>
             {step.image && (
               <img
-                src={`/guide/${step.image}.png`}
+                src={`/guide/${step.image}.png?v=${IMAGES_VERSION}`}
                 alt={step.alt}
                 loading="lazy"
                 style={{
