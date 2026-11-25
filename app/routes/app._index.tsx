@@ -377,6 +377,27 @@ function QuickSwitch({
                   {on ? "On" : "Off"}
                 </s-badge>
               )}
+              {/* The switch sits next to its On/Off badge. */}
+              <s-switch
+                // Remount when the saved value changes, so a refused change snaps back.
+                key={`${field}-${checked}`}
+                label={label}
+                labelAccessibilityVisibility="exclusive"
+                defaultChecked={on}
+                disabled={
+                  Boolean(locked) || needsAdding || fetcher.state !== "idle"
+                }
+                onChange={(event) =>
+                  fetcher.submit(
+                    {
+                      intent: "toggle",
+                      field,
+                      value: event.currentTarget.checked ? "on" : "off",
+                    },
+                    { method: "post" },
+                  )
+                }
+              />
             </s-stack>
             <s-text color="subdued">{details}</s-text>
             {locked && <s-text color="subdued">{locked}</s-text>}
@@ -390,24 +411,6 @@ function QuickSwitch({
           </s-stack>
         </div>
         {image && <Thumbnail {...image} />}
-        <s-switch
-          // Remount when the saved value changes, so a refused change snaps back.
-          key={`${field}-${checked}`}
-          label={label}
-          labelAccessibilityVisibility="exclusive"
-          defaultChecked={on}
-          disabled={Boolean(locked) || needsAdding || fetcher.state !== "idle"}
-          onChange={(event) =>
-            fetcher.submit(
-              {
-                intent: "toggle",
-                field,
-                value: event.currentTarget.checked ? "on" : "off",
-              },
-              { method: "post" },
-            )
-          }
-        />
       </div>
     </s-box>
   );
