@@ -14,7 +14,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 // Change this when a guide picture is replaced, so browsers load the new one.
-const IMAGES_VERSION = "2026-11-25";
+const IMAGES_VERSION = "2026-11-25b";
 
 type GuideStep = {
   title: string;
@@ -84,16 +84,27 @@ export default function Guide() {
       alt: "Step 2 of Settings: each payment method with its discount and a Discount ON or OFF switch",
     },
     {
-      title: "Check what customers get, then save",
+      title: "Check what customers see",
       text: (
         <>
           Step 3 is a small table: for each choice in the pop-up, what customers
-          pay and which methods checkout then shows. When it looks right, click
-          Save in the bar at the top of the page.
+          pay and which methods checkout then shows.
         </>
       ),
       image: "preview",
       alt: "Step 3 of Settings: a table of each pop-up choice, what customers pay and the methods checkout shows",
+    },
+    {
+      title: "Combine with other discounts, then save",
+      text: (
+        <>
+          In step 4, choose whether this discount can be used together with
+          product discounts and sale prices, and with other order discounts.
+          Then click Save in the bar at the top of the page.
+        </>
+      ),
+      image: "combine",
+      alt: "Step 4 of Settings: switches to combine with product discounts and sale prices, and with other order discounts",
     },
     {
       title: "Turn on the payment pop-up",
