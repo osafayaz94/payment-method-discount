@@ -60,6 +60,8 @@ export default function Guide() {
           full price.
         </>
       ),
+      image: "discount",
+      alt: "Step 1 of Settings: the Give the discount switch turned on and a 5% discount",
       links: [{ label: "Open Settings", href: "/app/settings" }],
     },
     {
