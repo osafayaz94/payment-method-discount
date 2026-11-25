@@ -252,7 +252,13 @@ export default function Guide() {
                 alt={step.alt}
                 loading="lazy"
                 style={{
+                  // Natural size: the column would otherwise stretch small
+                  // pictures (the pop-up, the banner) to its full width.
                   maxWidth: "100%",
+                  width: "auto",
+                  height: "auto",
+                  alignSelf: "flex-start",
+                  justifySelf: "start",
                   display: "block",
                   borderRadius: 8,
                   border: "1px solid #e3e3e3",
