@@ -110,10 +110,12 @@ export default function Guide() {
       title: "Turn on the payment pop-up",
       text: (
         <>
-          Click the button below: your theme editor opens on App embeds.{" "}
-          <b>1</b> App embeds is selected, <b>2</b> make sure Payment choice
-          pop-up is switched on, <b>3</b> click Save. The pop-up is required:
-          it&apos;s how customers choose bank transfer, so without it
+          Click the button below: your theme editor opens on App embeds with
+          Payment choice pop-up already switched on. <b>1</b> App embeds is
+          selected, <b>2</b> Payment choice pop-up is on, <b>3</b> click{" "}
+          <b>Save</b> at the top right. Only you can click Save: Shopify
+          doesn&apos;t let apps change your theme on their own. The pop-up is
+          required: it&apos;s how customers choose bank transfer, so without it
           there&apos;s no discount. Home shows whether it&apos;s on.
         </>
       ),
