@@ -14,7 +14,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 // Change this when a guide picture is replaced, so browsers load the new one.
-const IMAGES_VERSION = "2026-11-25b";
+const IMAGES_VERSION = "2026-11-25c";
 
 type GuideStep = {
   title: string;
@@ -129,6 +129,31 @@ export default function Guide() {
       ],
     },
     {
+      title: "Show the saving on product and cart pages",
+      optional: true,
+      text: (
+        <>
+          A banner such as &quot;Pay by Bank Deposit, PayPal, Easy Paisa or
+          PayTm at checkout and save {percent}%&quot;, with the amount worked
+          out from the price. Click a button below, then Save in the theme
+          editor. You can move the banner where you like, and switch it off on
+          Home.
+        </>
+      ),
+      image: "banner",
+      alt: "A product page with the savings banner: pay by Bank Deposit, PayPal, Easy Paisa or PayTm and save 5%",
+      links: [
+        {
+          label: "Add to product pages",
+          href: `${theme}?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`,
+        },
+        {
+          label: "Add to cart page",
+          href: `${theme}?template=cart&addAppBlockId=${apiKey}/savings-banner&target=newAppsSection`,
+        },
+      ],
+    },
+    {
       title: "What your customers see",
       text: (
         <>
@@ -143,37 +168,13 @@ export default function Guide() {
       alt: "The pop-up: bank transfer (Bank Deposit, EasyPaisa, PayPal) saves 5%, cash on delivery is full price",
     },
     {
-      title: "Show the saving on product and cart pages",
-      optional: true,
-      text: (
-        <>
-          A banner such as &quot;Pay by Bank Deposit, EasyPaisa or PayPal at
-          checkout and save {percent}%&quot;, with the amount worked out from
-          the price. Click a button below, then Save in the theme editor. You
-          can move the banner where you like, and switch it off on Home.
-        </>
-      ),
-      image: "banner",
-      alt: "A product page with the savings banner under the price",
-      links: [
-        {
-          label: "Add to product pages",
-          href: `${theme}?template=product&addAppBlockId=${apiKey}/savings-banner&target=mainSection`,
-        },
-        {
-          label: "Add to cart page",
-          href: `${theme}?template=cart&addAppBlockId=${apiKey}/savings-banner&target=newAppsSection`,
-        },
-      ],
-    },
-    {
       title: "Pause or resume from Home",
       text: (
         <>
           Home shows the discount in one line, such as &quot;{percent}% off for
-          Bank Deposit, Jazz Cash, PayTm&quot;, with the main switch to pause or
-          resume it straight away. It also shows whether the pop-up and banner
-          are on your store, and this month&apos;s discounted orders.
+          Bank Deposit, PayPal, Easy Paisa, PayTm&quot;, with the main switch to
+          pause or resume it straight away. It also shows whether the pop-up and
+          banner are on your store, and this month&apos;s discounted orders.
         </>
       ),
       image: "switches",
